@@ -1,0 +1,255 @@
+/* Glasswing — a light, glassy look that fits the "see through to the reasoning"
+   idea. One accent colour, muted step rows, and the answer standing clear. */
+
+:root {
+  --bg: #f4f6fb;
+  --panel: rgba(255, 255, 255, 0.72);
+  --border: rgba(15, 23, 42, 0.1);
+  --text: #1e293b;
+  --muted: #64748b;
+  --accent: #4f46e5;
+  --thinking: #64748b;
+  --call: #4f46e5;
+  --result: #0f766e;
+  --error: #dc2626;
+  --answer-bg: rgba(79, 70, 229, 0.06);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0b1120;
+    --panel: rgba(30, 41, 59, 0.6);
+    --border: rgba(148, 163, 184, 0.16);
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+    --accent: #818cf8;
+    --thinking: #94a3b8;
+    --call: #a5b4fc;
+    --result: #5eead4;
+    --error: #f87171;
+    --answer-bg: rgba(129, 140, 248, 0.1);
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(1200px 600px at 80% -10%, rgba(129, 140, 248, 0.18), transparent),
+    var(--bg);
+  color: var(--text);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  min-height: 100vh;
+}
+
+.app {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 32px 20px 120px;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.header h1 {
+  margin: 0;
+  font-size: 30px;
+  letter-spacing: -0.02em;
+  background: linear-gradient(120deg, var(--accent), #22d3ee);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.tagline {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.exchanges {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.empty {
+  text-align: center;
+  color: var(--muted);
+  padding: 48px 16px;
+  font-size: 15px;
+}
+
+.exchange {
+  background: var(--panel);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 16px 18px;
+  box-shadow: 0 8px 30px rgba(15, 23, 42, 0.06);
+}
+
+.question {
+  font-weight: 600;
+  font-size: 16px;
+  margin-bottom: 12px;
+}
+
+.timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.step {
+  display: flex;
+  gap: 10px;
+  font-size: 14px;
+  line-height: 1.5;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border-left: 3px solid transparent;
+  background: rgba(148, 163, 184, 0.06);
+}
+
+.step-tag {
+  flex: 0 0 auto;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 700;
+  padding-top: 2px;
+  min-width: 76px;
+  color: var(--muted);
+}
+
+.step-body {
+  flex: 1 1 auto;
+  min-width: 0;
+  word-break: break-word;
+}
+
+.step-thinking {
+  border-left-color: var(--thinking);
+  color: var(--muted);
+  font-style: italic;
+}
+
+.step-call {
+  border-left-color: var(--call);
+}
+.step-call .step-tag {
+  color: var(--call);
+}
+
+.step-args,
+.step-result-text {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: rgba(15, 23, 42, 0.08);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12.5px;
+  white-space: pre-wrap;
+}
+
+.step-result {
+  border-left-color: var(--result);
+}
+.step-result .step-tag {
+  color: var(--result);
+}
+.step-result-from {
+  color: var(--muted);
+  font-size: 13px;
+}
+.step-result-text {
+  margin-left: 0;
+  margin-top: 4px;
+  display: block;
+  max-height: 160px;
+  overflow: auto;
+}
+
+.step-error {
+  border-left-color: var(--error);
+}
+.step-error .step-tag,
+.step-error .step-body {
+  color: var(--error);
+}
+
+.answer {
+  margin-top: 12px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: var(--answer-bg);
+  border: 1px solid var(--border);
+}
+
+.answer-tag {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.answer-body {
+  margin-top: 6px;
+  font-size: 15px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.composer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  gap: 10px;
+  padding: 16px 20px;
+  background: linear-gradient(to top, var(--bg) 70%, transparent);
+}
+
+.composer > input {
+  flex: 1 1 auto;
+  max-width: 660px;
+  margin: 0 auto 0 max(20px, calc(50% - 370px));
+  padding: 13px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  backdrop-filter: blur(10px);
+  color: var(--text);
+  font-size: 15px;
+  outline: none;
+}
+
+.composer > input:focus {
+  border-color: var(--accent);
+}
+
+.composer > button {
+  margin-right: max(20px, calc(50% - 370px));
+  padding: 13px 22px;
+  border-radius: 12px;
+  border: none;
+  background: var(--accent);
+  color: white;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.composer > button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
