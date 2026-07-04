@@ -121,7 +121,7 @@ def run(user_message: str, on_step=None) -> str:
         # No tool calls means the model is done and this is the answer.
         if not message.tool_calls:
             answer = message.content or ""
-            answer = grounding.ground_answer(answer, _evidence(messages))
+            answer = grounding.ground_answer(answer, _evidence(messages), asked=user_message)
             emit(Step("final_answer", content=answer))
             tracer.end()
             return answer
@@ -195,7 +195,7 @@ def run(user_message: str, on_step=None) -> str:
     if message is None:
         return "Sorry — I couldn't reach the model just now. Please try again."
     answer = message.content or "I couldn't find enough to answer that."
-    answer = grounding.ground_answer(answer, _evidence(messages))
+    answer = grounding.ground_answer(answer, _evidence(messages), asked=user_message)
     emit(Step("final_answer", content=answer))
     tracer.end()
     return answer

@@ -21,12 +21,26 @@ _OPS = {
     ast.UAdd: operator.pos,
 }
 
+# Refusing eval() blocks code execution, but plain arithmetic can still hang the
+# process: "9**9**9" asks Python to build a ~370-million-digit integer, which
+# pins CPU and memory long enough to be a denial of service. We never need an
+# exponent that large for a real question, so we cap it and reject the rest. The
+# exponent is checked before the power is computed, so the huge number is never
+# built in the first place.
+MAX_EXPONENT = 1000
+
 
 def _eval(node):
-    if isinstance(node, ast.Constant) and isinstance(node.value, (int, float)):
+    # bool is a subclass of int, so guard against it to keep "True" out of maths.
+    if isinstance(node, ast.Constant) and isinstance(node.value, (int, float)) \
+            and not isinstance(node.value, bool):
         return node.value
     if isinstance(node, ast.BinOp) and type(node.op) in _OPS:
-        return _OPS[type(node.op)](_eval(node.left), _eval(node.right))
+        left = _eval(node.left)
+        right = _eval(node.right)
+        if isinstance(node.op, ast.Pow) and abs(right) > MAX_EXPONENT:
+            raise ValueError(f"exponent too large (max {MAX_EXPONENT})")
+        return _OPS[type(node.op)](left, right)
     if isinstance(node, ast.UnaryOp) and type(node.op) in _OPS:
         return _OPS[type(node.op)](_eval(node.operand))
     # Names, function calls, attribute access, strings: all refused here.

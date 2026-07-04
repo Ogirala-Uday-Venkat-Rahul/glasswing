@@ -24,3 +24,20 @@ def test_rejects_names():
 def test_rejects_function_calls():
     with pytest.raises(ValueError):
         calculator("pow(2, 3)")
+
+
+def test_rejects_huge_exponent_without_hanging():
+    # "9**9**9" would build a ~370-million-digit integer and hang the process.
+    # The exponent is checked before the power runs, so this returns fast.
+    with pytest.raises(ValueError):
+        calculator("9**9**9")
+
+
+def test_allows_reasonable_exponent():
+    assert calculator("2 ** 10") == "1024"
+
+
+def test_rejects_booleans():
+    # bool is an int subclass; make sure it is not accepted as a number.
+    with pytest.raises(ValueError):
+        calculator("True + 1")

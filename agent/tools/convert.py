@@ -81,6 +81,11 @@ def convert(value: float, from_unit: str, to_unit: str) -> str:
 
     if src in _TEMP and dst in _TEMP:
         celsius = _to_celsius(float(value), _TEMP[src])
+        # Nothing can be colder than absolute zero (-273.15 C). Rather than hand
+        # back a physically impossible number, reject it so the model can tell
+        # the user the input was wrong.
+        if celsius < -273.15 - 1e-9:
+            raise ValueError("temperature is below absolute zero")
         return f"{_fmt(_from_celsius(celsius, _TEMP[dst]))} {_TEMP[dst]}"
 
     if src in _LINEAR and dst in _LINEAR:

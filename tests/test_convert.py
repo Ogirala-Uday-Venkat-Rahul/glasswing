@@ -33,3 +33,14 @@ def test_rejects_cross_dimension():
 def test_rejects_unknown_unit():
     with pytest.raises(ValueError):
         convert(5, "smoots", "m")
+
+
+def test_rejects_below_absolute_zero():
+    # -300 C is colder than absolute zero and must be refused, not converted.
+    with pytest.raises(ValueError):
+        convert(-300, "C", "F")
+
+
+def test_allows_absolute_zero_exactly():
+    # 0 K is exactly absolute zero and is a valid temperature.
+    assert convert(0, "K", "C") == "-273.15 c"
