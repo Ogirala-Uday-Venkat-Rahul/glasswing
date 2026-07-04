@@ -1,0 +1,29 @@
+# Grows as we build layer by layer (see build order in README).
+# Unpinned for now; pin before deploy.
+
+# --- Agent core (build step 1) ---
+groq                 # native tool-calling client (swappable seam in agent/llm.py)
+httpx                # HTTP for fetch_url + Tavily
+trafilatura          # main-content extraction (library, not hand-rolled)
+python-dotenv        # load .env in dev
+
+# --- Backend / SSE (build step 2+) ---
+fastapi
+uvicorn[standard]
+sse-starlette        # server-sent events for the step timeline
+
+# --- Persistence (build step 3) ---
+psycopg[binary]      # Neon Postgres
+
+# --- Auth (build step 4) ---
+authlib              # Google OAuth (hand-rolled flow, authlib handles the OIDC bits)
+itsdangerous         # signed session cookie
+
+# --- Image storage (build step 5) ---
+boto3                # R2 is S3-compatible
+
+# --- Observability (optional; off unless LANGFUSE_* set) ---
+# langfuse
+
+# --- Dev ---
+pytest
