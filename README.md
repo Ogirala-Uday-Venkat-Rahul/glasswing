@@ -10,10 +10,15 @@ agent's decision process is hidden.
 
 - Runs a hand-rolled tool-calling loop over a Groq model. The model decides when to
   call a tool and when it has enough to answer.
-- Ships three tools: web search (Serper / Google results), URL fetch and extract (httpx + trafilatura),
-  and a calculator. The calculator is deliberate: it shows the agent delegating
-  arithmetic instead of hallucinating numbers.
+- Ships five tools: web search (Serper / Google results), URL fetch and extract (httpx + trafilatura),
+  a calculator, a current date/time lookup, and a unit and temperature converter. The
+  calculator is deliberate: it shows the agent delegating arithmetic instead of
+  hallucinating numbers.
+- Checks its own answers: a deterministic grounding pass flags any figure that doesn't
+  appear in the retrieved evidence, so the agent doesn't state numbers it can't support.
 - Streams each step to the frontend over SSE, rendered as a live timeline.
+- Remembers the conversation. Each turn is saved to Postgres and replayed on the next
+  question, so follow-ups work; a stored chat can be reloaded by its id.
 - Accepts image input. You can ask questions about an uploaded picture.
 - Signs you in with Google and keeps per-user conversation history.
 
@@ -81,21 +86,25 @@ agent/
   llm.py         model client and the seam for swapping providers
   loop.py        the tool-calling loop
   schemas.py     request/response and step types
+  grounding.py   deterministic check that answers cite their evidence
   trace.py       no-op tracing unless Langfuse is configured
   tools/
     __init__.py  registry and tool schemas
     web_search.py
     fetch_url.py
     calculator.py
+    current_datetime.py
+    convert.py
 backend/
   main.py
   auth.py        Google OAuth
   deps.py        current_user dependency
   routes/
     chat.py      SSE endpoint
-    history.py
-  db.py          Neon
-  models.py
+    history.py   read a stored conversation
+  db.py          Neon engine and session factory (optional seam)
+  models.py      User / Conversation / Message
+  store.py       conversation history queries
   storage.py     R2 upload and presigned URLs
 frontend/
   src/
