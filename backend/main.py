@@ -15,10 +15,16 @@ from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .routes import chat
+from . import db
+from .routes import chat, history
 
-# Load GROQ_API_KEY, SERPER_API_KEY, etc. from .env before anything uses them.
+# Load GROQ_API_KEY, SERPER_API_KEY, DATABASE_URL, etc. from .env before anything
+# uses them. db reads DATABASE_URL lazily, so it must run before init_db() below.
 load_dotenv()
+
+# Create the history tables if a database is configured. No-op (and non-fatal)
+# when DATABASE_URL is unset or unreachable, so the app still serves stateless.
+db.init_db()
 
 app = FastAPI(title="Glasswing", version="0.1.0")
 
@@ -32,6 +38,7 @@ app.add_middleware(
 )
 
 app.include_router(chat.router)
+app.include_router(history.router)
 
 
 @app.get("/health")

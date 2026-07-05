@@ -80,17 +80,24 @@ def _for_model(messages):
     return trimmed
 
 
-def run(user_message: str, on_step=None) -> str:
+def run(user_message: str, on_step=None, history=None) -> str:
     """Run the agent to completion and return its final answer text.
 
     on_step, if given, is called with each Step as it happens (this is how the
     backend will push events into the SSE stream).
+
+    history, if given, is the prior turns of this conversation as a list of
+    {"role", "content"} dicts (user and assistant messages only). It is slotted
+    in between the system prompt and the new user message, which is what turns a
+    stateless call into a multi-turn one. We store and replay only those durable
+    turns, never the tool-call scratch a run generates, so the replayed context
+    stays small. Defaulting to None keeps a plain single-shot call unchanged.
     """
     tracer = trace.start_trace("agent_run")
-    messages = [
-        {"role": "system", "content": SYSTEM_PROMPT},
-        {"role": "user", "content": user_message},
-    ]
+    messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+    if history:
+        messages.extend(history)
+    messages.append({"role": "user", "content": user_message})
 
     def emit(step: Step) -> None:
         tracer.event(step)

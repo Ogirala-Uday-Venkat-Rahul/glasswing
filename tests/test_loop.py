@@ -66,6 +66,30 @@ def test_prune_stubs_old_observations_but_keeps_recent():
     assert "OLD price $100" in loop._evidence(messages)
 
 
+def test_run_replays_history_before_new_message(monkeypatch):
+    # With history passed, the model should see: system, the prior turns, then
+    # the new user message last. We capture the messages the model is sent.
+    captured = {}
+
+    def fake_chat(messages, tools=None, **kwargs):
+        captured["messages"] = messages
+        return _message(content="ok", tool_calls=None)
+
+    monkeypatch.setattr(loop.llm, "chat", fake_chat)
+
+    loop.run(
+        "new question",
+        history=[
+            {"role": "user", "content": "earlier"},
+            {"role": "assistant", "content": "prior answer"},
+        ],
+    )
+
+    roles = [m["role"] for m in captured["messages"]]
+    assert roles == ["system", "user", "assistant", "user"]
+    assert captured["messages"][-1]["content"] == "new question"
+
+
 def test_loop_degrades_gracefully_at_step_limit(monkeypatch):
     # A model that keeps asking for a tool must be cut off at the cap. Instead of
     # erroring out, the loop makes one final call with NO tools offered, which

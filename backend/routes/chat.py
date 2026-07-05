@@ -1,4 +1,4 @@
-"""The streaming /chat endpoint (build step 2).
+"""The streaming /chat endpoint (build steps 2 and 3).
 
 This is where the two worlds meet. The agent core (agent/loop.py) is a plain
 synchronous function that *pushes* each Step to a callback as it happens. SSE,
@@ -14,10 +14,16 @@ The bridge, in three moving parts:
      back to the event loop with call_soon_threadsafe, the one safe way to touch
      an asyncio object from another thread, dropping it onto an asyncio.Queue.
   3. An async generator awaits that queue and yields each Step as an SSE event.
+
+Build step 3 adds persistence around the run: we load the conversation's prior
+turns to give the agent memory, save the new user message, and save the final
+answer. All of that also happens on the worker thread (blocking DB I/O belongs
+off the event loop), and it degrades to a stateless run if no database is set.
 """
 
 import asyncio
 import json
+import uuid
 
 from fastapi import APIRouter
 from pydantic import BaseModel
@@ -25,11 +31,17 @@ from sse_starlette.sse import EventSourceResponse
 
 from agent.loop import run
 
+from .. import store
+from ..db import new_session
+
 router = APIRouter()
 
 
 class ChatRequest(BaseModel):
     message: str
+    # Omitted on the first turn -> the server mints a new conversation id and
+    # returns it. Sent back on later turns to continue the same conversation.
+    conversation_id: str | None = None
 
 
 # A unique object that means "the agent run is over". We put it on the queue
@@ -44,6 +56,9 @@ async def chat(request: ChatRequest):
     loop = asyncio.get_running_loop()
     queue: asyncio.Queue = asyncio.Queue()
 
+    is_new = request.conversation_id is None
+    conversation_id = request.conversation_id or uuid.uuid4().hex
+
     def on_step(step) -> None:
         # Runs in the worker thread. asyncio.Queue is not thread-safe, so we do
         # not call put_nowait directly; call_soon_threadsafe schedules it on the
@@ -51,21 +66,53 @@ async def chat(request: ChatRequest):
         loop.call_soon_threadsafe(queue.put_nowait, step.to_dict())
 
     def work() -> None:
-        # The blocking agent run, on its own thread. run() already catches tool
-        # and model failures and emits them as error steps, but we guard here too
-        # so any unexpected crash still surfaces as an event instead of a silent
-        # dead stream. The finally guarantees the generator is always released.
+        # The blocking agent run plus its history reads/writes, on their own
+        # thread. run() already catches tool and model failures and emits them as
+        # error steps; we guard here too so any unexpected crash still surfaces as
+        # an event instead of a silent dead stream, and the finally always
+        # releases the generator.
+        db = new_session()  # None if DATABASE_URL is not configured
+
+        history = []
+        if db is not None:
+            # Persistence failures must not fail the chat: fall back to a
+            # stateless run rather than 500 if the database is momentarily down.
+            try:
+                if is_new:
+                    store.create_conversation(
+                        db, conversation_id, title=request.message[:60]
+                    )
+                history = store.load_history(db, conversation_id)
+                store.add_message(db, conversation_id, "user", request.message)
+                db.commit()
+            except Exception as exc:  # noqa: BLE001 - degrade, don't crash
+                db.rollback()
+                print(f"[chat] history load/save failed, continuing stateless: {exc}")
+
         try:
-            run(request.message, on_step=on_step)
+            answer = run(request.message, on_step=on_step, history=history)
+            if db is not None:
+                try:
+                    store.add_message(db, conversation_id, "assistant", answer)
+                    db.commit()
+                except Exception as exc:  # noqa: BLE001 - answer already streamed
+                    db.rollback()
+                    print(f"[chat] answer save failed: {exc}")
         except Exception as exc:  # last-resort guard for the stream
             loop.call_soon_threadsafe(
                 queue.put_nowait,
                 {"type": "error", "content": f"Unexpected server error: {exc}"},
             )
         finally:
+            if db is not None:
+                db.close()
             loop.call_soon_threadsafe(queue.put_nowait, _DONE)
 
     async def event_stream():
+        # First frame tells the client which conversation this is, so it can send
+        # the id back on the next turn to continue the thread.
+        yield {"event": "meta", "data": json.dumps({"conversation_id": conversation_id})}
+
         # Kick the blocking work onto a thread from the default executor. We do
         # not await it: it feeds the queue on its own while we drain below.
         loop.run_in_executor(None, work)

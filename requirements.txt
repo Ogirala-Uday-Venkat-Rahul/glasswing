@@ -13,7 +13,8 @@ uvicorn[standard]
 sse-starlette        # server-sent events for the step timeline
 
 # --- Persistence (build step 3) ---
-psycopg[binary]      # Neon Postgres
+sqlalchemy           # ORM: User/Conversation/Message models + queries
+psycopg[binary]      # Neon Postgres driver (psycopg 3)
 
 # --- Auth (build step 4) ---
 authlib              # Google OAuth (hand-rolled flow, authlib handles the OIDC bits)
