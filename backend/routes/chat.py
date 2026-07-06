@@ -25,13 +25,13 @@ import asyncio
 import json
 import uuid
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 from pydantic import BaseModel
 from sse_starlette.sse import EventSourceResponse
 
 from agent.loop import run
 
-from .. import store
+from .. import auth, store
 from ..db import new_session
 
 router = APIRouter()
@@ -50,7 +50,7 @@ _DONE = object()
 
 
 @router.post("/chat")
-async def chat(request: ChatRequest):
+async def chat(request: ChatRequest, http_request: Request):
     # The event loop and queue live on this request's async task. The worker
     # thread will reach back into this loop to deliver each step.
     loop = asyncio.get_running_loop()
@@ -58,6 +58,11 @@ async def chat(request: ChatRequest):
 
     is_new = request.conversation_id is None
     conversation_id = request.conversation_id or uuid.uuid4().hex
+
+    # Who's asking? Read the same signed session cookie the auth routes set. None
+    # if signed out -- the chat still works, the conversation is just left unowned
+    # (same graceful degrade as running with no database at all).
+    user_id = auth.read_session(http_request.cookies.get(auth.SESSION_COOKIE))
 
     def on_step(step) -> None:
         # Runs in the worker thread. asyncio.Queue is not thread-safe, so we do
@@ -80,7 +85,7 @@ async def chat(request: ChatRequest):
             try:
                 if is_new:
                     store.create_conversation(
-                        db, conversation_id, title=request.message[:60]
+                        db, conversation_id, user_id=user_id, title=request.message[:60]
                     )
                 history = store.load_history(db, conversation_id)
                 store.add_message(db, conversation_id, "user", request.message)

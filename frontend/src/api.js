@@ -20,6 +20,30 @@
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
+// --- Auth -------------------------------------------------------------------
+//
+// The session lives in an httpOnly cookie the JS can't read, so we never handle
+// a token here. Instead every auth call sends `credentials: "include"`, which
+// tells the browser to attach the gw_session cookie; the server reads it and
+// tells us who (if anyone) is signed in.
+
+export async function getMe(apiBase = API_BASE) {
+  // "Who am I?" Returns { authenticated: false } or { authenticated: true, user }.
+  const res = await fetch(`${apiBase}/auth/me`, { credentials: "include" });
+  if (!res.ok) return { authenticated: false };
+  return res.json();
+}
+
+export function login(apiBase = API_BASE) {
+  // A full-page navigation, not fetch: the login is a chain of redirects
+  // (our backend -> Google -> back) that the browser itself must follow.
+  window.location.href = `${apiBase}/auth/login`;
+}
+
+export async function logout(apiBase = API_BASE) {
+  await fetch(`${apiBase}/auth/logout`, { method: "POST", credentials: "include" });
+}
+
 function parseFrame(frame) {
   // One SSE event block -> { event, data }, or null if it has no data line.
   // Per the SSE spec an event with no "event:" line defaults to "message"; our
@@ -45,6 +69,9 @@ export async function* streamChat(message, { conversationId = null, onMeta } = {
   const res = await fetch(`${apiBase}/chat`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
+    // Send the gw_session cookie so the backend knows who is asking and can own
+    // the conversation. Without this the browser withholds the cookie on POST.
+    credentials: "include",
     // conversation_id is null on the first turn (the server mints one) and the
     // saved id on later turns (the server loads that thread's history).
     body: JSON.stringify({ message, conversation_id: conversationId }),

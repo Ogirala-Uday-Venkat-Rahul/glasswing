@@ -11,12 +11,14 @@ packages:
     uvicorn backend.main:app --reload
 """
 
+import os
+
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from . import db
-from .routes import chat, history
+from .routes import auth, chat, history
 
 # Load GROQ_API_KEY, SERPER_API_KEY, DATABASE_URL, etc. from .env before anything
 # uses them. db reads DATABASE_URL lazily, so it must run before init_db() below.
@@ -28,17 +30,22 @@ db.init_db()
 
 app = FastAPI(title="Glasswing", version="0.1.0")
 
-# Wide open so local curl and, later, the dev frontend can call it. Before the
-# real frontend deploys we narrow allow_origins to the Vercel URL (build step 7).
+# The session cookie means the browser must send credentials, and a credentialed
+# request may NOT use a wildcard origin -- browsers forbid allow_origins=["*"]
+# together with allow_credentials=True. So we name the exact frontend origin(s).
+# FRONTEND_URL lets deploy point this at the Vercel URL (build step 7).
+_frontend = os.getenv("FRONTEND_URL", "http://localhost:5173")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[_frontend, "http://localhost:5173"],
+    allow_credentials=True,   # let the browser send/receive the gw_session cookie
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 app.include_router(chat.router)
 app.include_router(history.router)
+app.include_router(auth.router)
 
 
 @app.get("/health")

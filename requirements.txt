@@ -17,8 +17,9 @@ sqlalchemy           # ORM: User/Conversation/Message models + queries
 psycopg[binary]      # Neon Postgres driver (psycopg 3)
 
 # --- Auth (build step 4) ---
-authlib              # Google OAuth (hand-rolled flow, authlib handles the OIDC bits)
-itsdangerous         # signed session cookie
+# Google OAuth is hand-rolled on httpx (see backend/auth.py) -- no OAuth library,
+# so the whole authorization-code flow stays visible in one file.
+itsdangerous         # signs the session + state cookies (HMAC over a payload)
 
 # --- Image storage (build step 5) ---
 boto3                # R2 is S3-compatible

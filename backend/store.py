@@ -8,12 +8,28 @@ Uses the SQLAlchemy 2.0 select() style throughout.
 
 from sqlalchemy import select
 
-from .models import Conversation, Message
+from .models import Conversation, Message, User
 
 # How many past messages we replay into the agent. A conversation can grow
 # without bound, and the loop re-sends its whole context on every model call, so
 # we feed back only the most recent slice rather than the entire history.
 MAX_HISTORY_MESSAGES = 20
+
+
+def get_or_create_user(db, email):
+    """Find the user with this email, or create one. Not committed -- caller commits.
+
+    This is the "upsert" the OAuth callback needs: the first time someone signs in
+    we make their row; every time after we return the same row. We key on email
+    because Google guarantees it and User.email is unique, so a returning user maps
+    to exactly one account.
+    """
+    user = db.scalars(select(User).where(User.email == email)).first()
+    if user is None:
+        user = User(email=email)
+        db.add(user)
+        db.flush()  # populate user.id now so the caller can use it before commit
+    return user
 
 
 def create_conversation(db, conversation_id, user_id=None, title=None):
