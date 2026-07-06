@@ -72,6 +72,35 @@ body {
   font-size: 14px;
 }
 
+.toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 12px;
+  min-height: 32px;
+}
+
+.new-chat {
+  padding: 6px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  backdrop-filter: blur(10px);
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.new-chat:hover:not(:disabled) {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.new-chat:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 .exchanges {
   display: flex;
   flex-direction: column;

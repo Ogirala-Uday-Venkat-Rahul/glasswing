@@ -11,30 +11,43 @@
 //
 // streamChat is an async generator: `for await (const step of streamChat(msg))`
 // gives you each Step the moment it arrives, exactly as the backend emits it.
+//
+// The backend sends two kinds of event. The very first is "meta", carrying the
+// conversation_id so the client can send it back on the next turn and continue
+// the same thread (multi-turn memory). The rest are "step" events. We yield only
+// the steps and hand the meta payload to an onMeta callback, so callers keep the
+// simple `for await (const step of ...)` loop without the meta frame leaking in.
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
 function parseFrame(frame) {
-  // One SSE event block -> the JSON object on its data: line, or null.
+  // One SSE event block -> { event, data }, or null if it has no data line.
+  // Per the SSE spec an event with no "event:" line defaults to "message"; our
+  // backend always names its events, but we default to "step" to be safe.
+  let event = "step";
   let data = null;
   for (const line of frame.split("\n")) {
-    if (line.startsWith("data:")) {
+    if (line.startsWith("event:")) {
+      event = line.slice(6).trim();
+    } else if (line.startsWith("data:")) {
       data = line.slice(5).trim();
     }
   }
   if (data === null) return null;
   try {
-    return JSON.parse(data);
+    return { event, data: JSON.parse(data) };
   } catch {
     return null;
   }
 }
 
-export async function* streamChat(message, apiBase = API_BASE) {
+export async function* streamChat(message, { conversationId = null, onMeta } = {}, apiBase = API_BASE) {
   const res = await fetch(`${apiBase}/chat`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ message }),
+    // conversation_id is null on the first turn (the server mints one) and the
+    // saved id on later turns (the server loads that thread's history).
+    body: JSON.stringify({ message, conversation_id: conversationId }),
   });
   if (!res.ok || !res.body) {
     throw new Error(`Request failed (${res.status})`);
@@ -58,8 +71,13 @@ export async function* streamChat(message, apiBase = API_BASE) {
     while ((sep = buffer.indexOf("\n\n")) !== -1) {
       const frame = buffer.slice(0, sep);
       buffer = buffer.slice(sep + 2);
-      const step = parseFrame(frame);
-      if (step) yield step;
+      const parsed = parseFrame(frame);
+      if (!parsed) continue;
+      if (parsed.event === "meta") {
+        if (onMeta) onMeta(parsed.data);
+        continue;
+      }
+      yield parsed.data;
     }
   }
 }

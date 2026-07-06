@@ -5,16 +5,20 @@ import StepTimeline from "./StepTimeline.jsx";
 // One turn of conversation: the question the user asked, and the list of steps
 // the agent produced answering it. Steps accumulate live as they stream in.
 //
-// This is still a stateless demo: nothing is saved, and each question is its own
-// exchange. Conversation memory (remembering earlier turns) is a later build
-// step; this component is written so that adding it means feeding prior turns
-// into the request, not reworking the UI.
+// Turns belong to a conversation. The backend mints a conversation_id on the
+// first turn (delivered as the stream's "meta" event) and remembers it here in a
+// ref; every later turn sends that id back, so the server replays the earlier
+// turns into the agent and it has memory. "New chat" forgets the id to start a
+// fresh thread. (Actual persistence needs DATABASE_URL set on the backend; with
+// no database the id still round-trips but there is nothing to replay.)
 
 export default function Chat() {
   const [input, setInput] = useState("");
   const [exchanges, setExchanges] = useState([]);
   const [busy, setBusy] = useState(false);
   const bottomRef = useRef(null);
+  // Survives across renders without causing one; read synchronously inside ask().
+  const conversationId = useRef(null);
 
   // Keep the newest step in view as the timeline grows.
   useEffect(() => {
@@ -28,7 +32,12 @@ export default function Chat() {
     setExchanges((prev) => [...prev, { question, steps: [] }]);
 
     try {
-      for await (const step of streamChat(question)) {
+      for await (const step of streamChat(question, {
+        conversationId: conversationId.current,
+        onMeta: (meta) => {
+          conversationId.current = meta.conversation_id;
+        },
+      })) {
         // Append each step to this exchange as it arrives.
         setExchanges((prev) => {
           const next = [...prev];
@@ -56,8 +65,25 @@ export default function Chat() {
     ask(question);
   }
 
+  function newChat() {
+    // Forget the thread and clear the screen; the next turn mints a fresh id.
+    conversationId.current = null;
+    setExchanges([]);
+    setInput("");
+  }
+
   return (
     <div className="chat">
+      <div className="toolbar">
+        <button
+          type="button"
+          className="new-chat"
+          onClick={newChat}
+          disabled={busy || exchanges.length === 0}
+        >
+          New chat
+        </button>
+      </div>
       <div className="exchanges">
         {exchanges.length === 0 && (
           <div className="empty">
