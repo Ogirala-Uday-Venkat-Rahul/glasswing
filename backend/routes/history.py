@@ -6,12 +6,40 @@ the frontend can reload a past chat. Listing all of a user's conversations (the
 auth in build step 4; for now a conversation is fetched by its own opaque id.
 """
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 
-from .. import store
+from .. import auth, store
 from ..db import is_enabled, new_session
 
 router = APIRouter()
+
+
+@router.get("/conversations")
+def list_conversations(request: Request):
+    """The signed-in user's past conversations, newest first (the recents list).
+
+    Scoped by the session cookie: signed out (or no database) simply returns an
+    empty list, so the frontend renders an empty sidebar rather than an error.
+    """
+    user_id = auth.read_session(request.cookies.get(auth.SESSION_COOKIE))
+    if not user_id or not is_enabled():
+        return {"conversations": []}
+
+    db = new_session()
+    try:
+        convos = store.list_user_conversations(db, user_id)
+        return {
+            "conversations": [
+                {
+                    "id": c.id,
+                    "title": c.title or "New conversation",
+                    "created_at": c.created_at.isoformat(),
+                }
+                for c in convos
+            ]
+        }
+    finally:
+        db.close()
 
 
 @router.get("/history/{conversation_id}")

@@ -32,6 +32,20 @@ def get_or_create_user(db, email):
     return user
 
 
+def list_user_conversations(db, user_id):
+    """A user's conversations, newest first -- the data behind the recents list.
+
+    Scoped to one user_id so people only ever see their own chats. Returns the
+    Conversation rows; the route shapes them into JSON.
+    """
+    stmt = (
+        select(Conversation)
+        .where(Conversation.user_id == user_id)
+        .order_by(Conversation.created_at.desc())
+    )
+    return list(db.scalars(stmt))
+
+
 def create_conversation(db, conversation_id, user_id=None, title=None):
     """Insert a new conversation row. Not committed here -- the caller commits."""
     convo = Conversation(id=conversation_id, user_id=user_id, title=title)

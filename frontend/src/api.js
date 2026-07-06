@@ -44,6 +44,24 @@ export async function logout(apiBase = API_BASE) {
   await fetch(`${apiBase}/auth/logout`, { method: "POST", credentials: "include" });
 }
 
+// --- Conversation history ---------------------------------------------------
+
+export async function listConversations(apiBase = API_BASE) {
+  // The signed-in user's past chats for the recents sidebar. [] when signed out.
+  const res = await fetch(`${apiBase}/conversations`, { credentials: "include" });
+  if (!res.ok) return [];
+  const data = await res.json();
+  return data.conversations || [];
+}
+
+export async function getConversation(id, apiBase = API_BASE) {
+  // The saved turns of one chat: [{ role, content, created_at }], oldest first.
+  const res = await fetch(`${apiBase}/history/${id}`, { credentials: "include" });
+  if (!res.ok) throw new Error(`Could not load conversation (${res.status})`);
+  const data = await res.json();
+  return data.messages || [];
+}
+
 function parseFrame(frame) {
   // One SSE event block -> { event, data }, or null if it has no data line.
   // Per the SSE spec an event with no "event:" line defaults to "message"; our

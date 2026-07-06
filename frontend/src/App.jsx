@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import Chat from "./components/Chat.jsx";
+import Workspace from "./components/Workspace.jsx";
 import Login from "./components/Login.jsx";
 import { getMe, logout } from "./api.js";
 
@@ -54,7 +54,7 @@ export default function App() {
               Sign out
             </button>
           </div>
-          <Chat />
+          <Workspace />
         </>
       ) : (
         <Login notice={notice} />

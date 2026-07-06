@@ -46,9 +46,9 @@ body {
 }
 
 .app {
-  max-width: 780px;
+  max-width: 1040px;
   margin: 0 auto;
-  padding: 32px 20px 120px;
+  padding: 32px 20px 40px;
 }
 
 .header {
@@ -72,33 +72,106 @@ body {
   font-size: 14px;
 }
 
-.toolbar {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: 12px;
-  min-height: 32px;
+/* --- Workspace: recents sidebar + chat pane --- */
+.workspace {
+  display: grid;
+  grid-template-columns: 232px 1fr;
+  gap: 24px;
+  align-items: start;
 }
 
-.new-chat {
-  padding: 6px 14px;
-  border-radius: 10px;
+.sidebar {
+  position: sticky;
+  top: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.new-chat-btn {
+  padding: 10px 14px;
+  border-radius: 12px;
   border: 1px solid var(--border);
   background: var(--panel);
   backdrop-filter: blur(10px);
-  color: var(--muted);
-  font-size: 13px;
+  color: var(--text);
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
+  text-align: left;
 }
 
-.new-chat:hover:not(:disabled) {
+.new-chat-btn:hover:not(:disabled) {
   color: var(--accent);
   border-color: var(--accent);
 }
 
-.new-chat:disabled {
+.new-chat-btn:disabled {
   opacity: 0.4;
   cursor: not-allowed;
+}
+
+.recents {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: calc(100vh - 140px);
+  overflow-y: auto;
+}
+
+.recents-empty {
+  color: var(--muted);
+  font-size: 13px;
+  padding: 4px 6px;
+  margin: 0;
+}
+
+.recent {
+  text-align: left;
+  padding: 9px 12px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  font-size: 13.5px;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.recent:hover:not(:disabled) {
+  background: rgba(148, 163, 184, 0.1);
+  color: var(--text);
+}
+
+.recent.active {
+  background: var(--answer-bg);
+  border-color: var(--border);
+  color: var(--text);
+  font-weight: 600;
+}
+
+.recent:disabled {
+  cursor: not-allowed;
+}
+
+@media (max-width: 720px) {
+  .workspace {
+    grid-template-columns: 1fr;
+  }
+  .sidebar {
+    position: static;
+  }
+  .recents {
+    flex-direction: row;
+    overflow-x: auto;
+    max-height: none;
+  }
+  .recent {
+    flex: 0 0 auto;
+    max-width: 160px;
+  }
 }
 
 /* --- Auth: login screen + signed-in bar --- */
@@ -336,20 +409,18 @@ body {
 }
 
 .composer {
-  position: fixed;
+  position: sticky;
   bottom: 0;
-  left: 0;
-  right: 0;
   display: flex;
   gap: 10px;
-  padding: 16px 20px;
-  background: linear-gradient(to top, var(--bg) 70%, transparent);
+  padding: 16px 0 8px;
+  margin-top: 8px;
+  background: linear-gradient(to top, var(--bg) 72%, transparent);
 }
 
 .composer > input {
   flex: 1 1 auto;
-  max-width: 660px;
-  margin: 0 auto 0 max(20px, calc(50% - 370px));
+  min-width: 0;
   padding: 13px 16px;
   border-radius: 12px;
   border: 1px solid var(--border);
@@ -365,7 +436,6 @@ body {
 }
 
 .composer > button {
-  margin-right: max(20px, calc(50% - 370px));
   padding: 13px 22px;
   border-radius: 12px;
   border: none;
