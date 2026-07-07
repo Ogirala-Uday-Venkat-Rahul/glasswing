@@ -75,9 +75,16 @@ Each layer is testable before the next one starts.
 python -m venv .venv
 .venv\Scripts\python.exe -m pip install -r requirements.txt
 cp .env.example .env   # then fill in keys
+.venv\Scripts\python.exe -m uvicorn backend.main:app --port 8000
 ```
 
-Frontend setup lands with build step 6.
+Frontend:
+
+```bash
+cd frontend
+npm install
+npm run dev            # serves on http://localhost:5173
+```
 
 ## Repository layout
 
@@ -108,10 +115,14 @@ backend/
   storage.py     R2 upload and presigned URLs
 frontend/
   src/
-    api.js       consumes the SSE stream
+    App.jsx          auth gate: sign-in screen or the workspace
+    api.js           consumes the SSE stream and the auth/history endpoints
     components/
-      Login.jsx
-      Chat.jsx
-      StepTimeline.jsx
+      Login.jsx      Google sign-in screen
+      Workspace.jsx  owns conversation state; sidebar plus chat
+      Sidebar.jsx    recents list and new chat
+      Chat.jsx       the message pane and composer
+      StepTimeline.jsx  the live step timeline and final answer
+      Markdown.jsx   small hand-rolled Markdown renderer for answers
 tests/
 ```
