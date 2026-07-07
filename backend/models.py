@@ -105,6 +105,10 @@ class Message(Base):
     )
     role: Mapped[str] = mapped_column(String(16))  # "user" or "assistant"
     content: Mapped[str] = mapped_column(Text)
+    # The R2 object key for an image attached to this turn, if any. Only the
+    # pointer lives in the database; the bytes live in R2 (see backend/storage.py).
+    # Null for almost every row -- assistant turns and text-only user turns.
+    image_key: Mapped[str | None] = mapped_column(String(512), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
 
     conversation: Mapped["Conversation"] = relationship(back_populates="messages")

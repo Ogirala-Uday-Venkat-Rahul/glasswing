@@ -96,9 +96,14 @@ def create_conversation(db, conversation_id, user_id=None, title=None):
     return convo
 
 
-def add_message(db, conversation_id, role, content):
-    """Append one turn. Not committed here -- the caller commits."""
-    msg = Message(conversation_id=conversation_id, role=role, content=content)
+def add_message(db, conversation_id, role, content, image_key=None):
+    """Append one turn. Not committed here -- the caller commits.
+
+    image_key, when set, is the R2 pointer for a picture the user attached to this
+    message (see backend/storage.py). Stored so a reloaded conversation can show
+    the image again; the agent's replayed history stays text-only.
+    """
+    msg = Message(conversation_id=conversation_id, role=role, content=content, image_key=image_key)
     db.add(msg)
     return msg
 

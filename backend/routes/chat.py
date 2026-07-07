@@ -32,7 +32,7 @@ from sse_starlette.sse import EventSourceResponse
 from agent.loop import run
 from agent.tools.remember import make_remember_tool
 
-from .. import auth, store
+from .. import auth, storage, store
 from ..db import new_session
 
 router = APIRouter()
@@ -43,6 +43,10 @@ class ChatRequest(BaseModel):
     # Omitted on the first turn -> the server mints a new conversation id and
     # returns it. Sent back on later turns to continue the same conversation.
     conversation_id: str | None = None
+    # The R2 object key returned by /upload, when the user attached an image to
+    # this turn. We presign it into a URL the vision model can fetch, and store the
+    # key as a pointer on the message.
+    image_key: str | None = None
 
 
 # A unique object that means "the agent run is over". We put it on the queue
@@ -91,7 +95,9 @@ async def chat(request: ChatRequest, http_request: Request):
                         db, conversation_id, user_id=user_id, title=request.message[:60]
                     )
                 history = store.load_history(db, conversation_id)
-                store.add_message(db, conversation_id, "user", request.message)
+                store.add_message(
+                    db, conversation_id, "user", request.message, image_key=request.image_key
+                )
                 db.commit()
             except Exception as exc:  # noqa: BLE001 - degrade, don't crash
                 db.rollback()
@@ -109,6 +115,16 @@ async def chat(request: ChatRequest, http_request: Request):
                 except Exception as exc:  # noqa: BLE001 - memory is a bonus, not required
                     print(f"[chat] memory load failed, continuing without it: {exc}")
 
+        # If the user attached an image, presign its R2 key into a URL the vision
+        # model can fetch for this turn. Done outside the db block because images
+        # work with or without persistence; skipped cleanly if R2 isn't configured.
+        images = None
+        if request.image_key and storage.is_enabled():
+            try:
+                images = [storage.view_url(request.image_key)]
+            except Exception as exc:  # noqa: BLE001 - a bad key shouldn't sink the chat
+                print(f"[chat] could not presign image, continuing without it: {exc}")
+
         try:
             answer = run(
                 request.message,
@@ -116,6 +132,7 @@ async def chat(request: ChatRequest, http_request: Request):
                 history=history,
                 memories=memories,
                 remember=remember_tool,
+                images=images,
             )
             if db is not None:
                 try:

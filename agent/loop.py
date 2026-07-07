@@ -81,6 +81,25 @@ def _for_model(messages):
     return trimmed
 
 
+def _user_content(text, images):
+    """The user turn: a plain string, or text + images as multimodal blocks.
+
+    With no images we keep the content a plain string, so a text-only turn is
+    byte-for-byte what it was before vision existed (and nothing downstream —
+    grounding, pruning, history replay — has to change). When images are attached
+    we send the OpenAI-style content list the vision model expects: one text block
+    followed by an image_url block per picture, each url a short-lived presigned
+    link the model fetches. The agent core stays storage-agnostic — it's handed
+    ready URLs and never knows they point at R2.
+    """
+    if not images:
+        return text
+    blocks = [{"type": "text", "text": text}]
+    for url in images:
+        blocks.append({"type": "image_url", "image_url": {"url": url}})
+    return blocks
+
+
 def _system_content(memories, can_remember) -> str:
     """The system prompt, plus what the agent knows about this user this run.
 
@@ -107,7 +126,7 @@ def _system_content(memories, can_remember) -> str:
     return content
 
 
-def run(user_message: str, on_step=None, history=None, memories=None, remember=None) -> str:
+def run(user_message: str, on_step=None, history=None, memories=None, remember=None, images=None) -> str:
     """Run the agent to completion and return its final answer text.
 
     on_step, if given, is called with each Step as it happens (this is how the
@@ -125,6 +144,12 @@ def run(user_message: str, on_step=None, history=None, memories=None, remember=N
     injected into the system prompt (recall); remember is a bound tool the agent
     can call to save a new fact (capture). Both omitted -> the agent runs with no
     memory, exactly as before, so a logged-out or DB-less run is unchanged.
+
+    images, if given, is a list of already-usable image URLs (short-lived presigned
+    R2 links) to attach to this turn, turning the user message into multimodal
+    content the vision model can see. Only this turn's images are sent; past turns'
+    images are not replayed (they'd re-bill heavy image tokens every step). Omitted
+    -> a plain text turn, unchanged.
     """
     tracer = trace.start_trace("agent_run")
 
@@ -139,7 +164,7 @@ def run(user_message: str, on_step=None, history=None, memories=None, remember=N
     messages = [{"role": "system", "content": _system_content(memories, remember is not None)}]
     if history:
         messages.extend(history)
-    messages.append({"role": "user", "content": user_message})
+    messages.append({"role": "user", "content": _user_content(user_message, images)})
 
     def emit(step: Step) -> None:
         tracer.event(step)

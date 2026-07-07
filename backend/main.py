@@ -18,7 +18,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from . import db
-from .routes import auth, chat, history
+from .routes import auth, chat, history, upload
 
 # Load GROQ_API_KEY, SERPER_API_KEY, DATABASE_URL, etc. from .env before anything
 # uses them. db reads DATABASE_URL lazily, so it must run before init_db() below.
@@ -46,6 +46,7 @@ app.add_middleware(
 app.include_router(chat.router)
 app.include_router(history.router)
 app.include_router(auth.router)
+app.include_router(upload.router)
 
 
 @app.get("/health")

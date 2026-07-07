@@ -8,10 +8,26 @@ auth in build step 4; for now a conversation is fetched by its own opaque id.
 
 from fastapi import APIRouter, HTTPException, Request
 
-from .. import auth, store
+from .. import auth, storage, store
 from ..db import is_enabled, new_session
 
 router = APIRouter()
+
+
+def _message_json(m):
+    """Shape a stored message for the client, presigning any attached image.
+
+    The database keeps only the R2 object key; here we turn it into a short-lived
+    view URL so the browser can redisplay the picture on reload. If storage isn't
+    configured (or presigning fails), we simply omit the image rather than error.
+    """
+    data = {"role": m.role, "content": m.content, "created_at": m.created_at.isoformat()}
+    if m.image_key and storage.is_enabled():
+        try:
+            data["image_url"] = storage.view_url(m.image_key)
+        except Exception as exc:  # noqa: BLE001 - a missing blob shouldn't 500 a reload
+            print(f"[history] could not presign image {m.image_key}: {exc}")
+    return data
 
 
 @router.get("/conversations")
@@ -56,14 +72,7 @@ def get_history(conversation_id: str):
             raise HTTPException(status_code=404, detail="Conversation not found.")
         return {
             "conversation_id": conversation_id,
-            "messages": [
-                {
-                    "role": m.role,
-                    "content": m.content,
-                    "created_at": m.created_at.isoformat(),
-                }
-                for m in messages
-            ],
+            "messages": [_message_json(m) for m in messages],
         }
     finally:
         db.close()
