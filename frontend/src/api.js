@@ -55,11 +55,39 @@ export async function listConversations(apiBase = API_BASE) {
 }
 
 export async function getConversation(id, apiBase = API_BASE) {
-  // The saved turns of one chat: [{ role, content, created_at }], oldest first.
+  // The saved turns of one chat: [{ role, content, created_at, image_url? }],
+  // oldest first. image_url is a presigned link present only on turns with an
+  // attached picture.
   const res = await fetch(`${apiBase}/history/${id}`, { credentials: "include" });
   if (!res.ok) throw new Error(`Could not load conversation (${res.status})`);
   const data = await res.json();
   return data.messages || [];
+}
+
+export async function uploadImage(file, apiBase = API_BASE) {
+  // Upload one image and get back its opaque R2 object key, which we then send
+  // with the chat message. Multipart form, and credentials so the upload is tied
+  // to the signed-in user. Surfaces the server's reason (unsupported type, too
+  // large, not configured) so the UI can show something useful.
+  const form = new FormData();
+  form.append("file", file);
+  const res = await fetch(`${apiBase}/upload`, {
+    method: "POST",
+    credentials: "include",
+    body: form,
+  });
+  if (!res.ok) {
+    let detail = `Upload failed (${res.status})`;
+    try {
+      const data = await res.json();
+      if (data.detail) detail = data.detail;
+    } catch {
+      /* non-JSON error body -- keep the status message */
+    }
+    throw new Error(detail);
+  }
+  const data = await res.json();
+  return data.image_key;
 }
 
 function parseFrame(frame) {
@@ -83,7 +111,7 @@ function parseFrame(frame) {
   }
 }
 
-export async function* streamChat(message, { conversationId = null, onMeta } = {}, apiBase = API_BASE) {
+export async function* streamChat(message, { conversationId = null, imageKey = null, onMeta } = {}, apiBase = API_BASE) {
   const res = await fetch(`${apiBase}/chat`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -91,8 +119,9 @@ export async function* streamChat(message, { conversationId = null, onMeta } = {
     // the conversation. Without this the browser withholds the cookie on POST.
     credentials: "include",
     // conversation_id is null on the first turn (the server mints one) and the
-    // saved id on later turns (the server loads that thread's history).
-    body: JSON.stringify({ message, conversation_id: conversationId }),
+    // saved id on later turns (the server loads that thread's history). image_key
+    // is the R2 key from a prior /upload when the user attached a picture.
+    body: JSON.stringify({ message, conversation_id: conversationId, image_key: imageKey }),
   });
   if (!res.ok || !res.body) {
     throw new Error(`Request failed (${res.status})`);

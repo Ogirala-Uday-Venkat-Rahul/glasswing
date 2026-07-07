@@ -371,6 +371,17 @@ body {
   margin-bottom: 12px;
 }
 
+.exchange-image {
+  display: block;
+  max-width: 320px;
+  max-height: 320px;
+  width: auto;
+  height: auto;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  margin-bottom: 12px;
+}
+
 .timeline {
   display: flex;
   flex-direction: column;
@@ -630,4 +641,60 @@ body {
 .composer > button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* Attach-an-image control: a ghost button that swaps to a thumbnail with a
+   remove badge once a picture is picked. */
+.attach-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  padding: 0 13px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  backdrop-filter: blur(10px);
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.attach-btn:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.attach-preview {
+  position: relative;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+}
+
+.attach-preview img {
+  height: 46px;
+  width: 46px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  display: block;
+}
+
+.attach-remove {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: var(--text);
+  color: var(--bg);
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }

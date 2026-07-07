@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import Sidebar from "./Sidebar.jsx";
 import Chat from "./Chat.jsx";
-import { streamChat, listConversations, getConversation } from "../api.js";
+import { streamChat, listConversations, getConversation, uploadImage } from "../api.js";
 
 // The signed-in workspace: recents sidebar on the left, the active conversation
 // on the right. This component owns all conversation state so the two stay in
@@ -16,7 +16,9 @@ function toExchanges(messages) {
   const out = [];
   for (const m of messages) {
     if (m.role === "user") {
-      out.push({ question: m.content, steps: [] });
+      // image_url is a presigned link the history endpoint adds for turns that
+      // had a picture attached, so a reloaded chat shows the image again.
+      out.push({ question: m.content, image: m.image_url || null, steps: [] });
     } else {
       if (out.length === 0) out.push({ question: "", steps: [] });
       out[out.length - 1].steps.push({ type: "final_answer", content: m.content });
@@ -31,6 +33,18 @@ export default function Workspace() {
   const [exchanges, setExchanges] = useState([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
+  // An image picked but not yet sent: { file, url } where url is a local preview.
+  const [pending, setPending] = useState(null);
+
+  function pickImage(file) {
+    if (!file) return;
+    setPending({ file, url: URL.createObjectURL(file) });
+  }
+
+  function clearImage() {
+    if (pending) URL.revokeObjectURL(pending.url);
+    setPending(null);
+  }
 
   // Load the recents list once on mount.
   useEffect(() => {
@@ -41,15 +55,37 @@ export default function Workspace() {
     setConversations(await listConversations());
   }
 
-  async function ask(question) {
+  async function ask(question, imageFile) {
     setBusy(true);
     const index = exchanges.length; // where this turn's exchange will live
     const wasNew = activeId === null;
-    setExchanges((prev) => [...prev, { question, steps: [], streaming: "" }]);
+    // A fresh preview URL owned by this exchange (the composer's own preview is
+    // released on submit, so we don't share it).
+    const preview = imageFile ? URL.createObjectURL(imageFile) : null;
+    setExchanges((prev) => [...prev, { question, image: preview, steps: [], streaming: "" }]);
+
+    // If a picture is attached, upload it first to get its R2 key. A failed
+    // upload stops here with an error step rather than sending a broken turn.
+    let imageKey = null;
+    if (imageFile) {
+      try {
+        imageKey = await uploadImage(imageFile);
+      } catch (err) {
+        setExchanges((prev) => {
+          const next = [...prev];
+          const errStep = { type: "error", content: `Could not upload the image: ${err.message}` };
+          next[index] = { ...next[index], streaming: "", steps: [errStep] };
+          return next;
+        });
+        setBusy(false);
+        return;
+      }
+    }
 
     try {
       for await (const step of streamChat(question, {
         conversationId: activeId,
+        imageKey,
         // The backend mints an id on the first turn; remember it so follow-ups
         // (and the sidebar) point at the same conversation.
         onMeta: (meta) => setActiveId(meta.conversation_id),
@@ -83,10 +119,15 @@ export default function Workspace() {
 
   function onSubmit(e) {
     e.preventDefault();
-    const question = input.trim();
+    // An image on its own is a valid turn — default the wording so the model has
+    // something to answer.
+    const question = input.trim() || (pending ? "What's in this image?" : "");
     if (!question || busy) return;
+    const imageFile = pending?.file || null;
+    if (pending) URL.revokeObjectURL(pending.url); // ask() makes its own preview
     setInput("");
-    ask(question);
+    setPending(null);
+    ask(question, imageFile);
   }
 
   // An example prompt was clicked on the empty screen: ask it straight away.
@@ -128,6 +169,9 @@ export default function Workspace() {
         onInputChange={setInput}
         onSubmit={onSubmit}
         onExample={askExample}
+        pendingImage={pending?.url || null}
+        onPickImage={pickImage}
+        onClearImage={clearImage}
       />
     </div>
   );

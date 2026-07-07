@@ -16,7 +16,17 @@ const EXAMPLES = [
   "What's the date and time right now?",
 ];
 
-export default function Chat({ exchanges, busy, input, onInputChange, onSubmit, onExample }) {
+export default function Chat({
+  exchanges,
+  busy,
+  input,
+  onInputChange,
+  onSubmit,
+  onExample,
+  pendingImage,
+  onPickImage,
+  onClearImage,
+}) {
   const bottomRef = useRef(null);
 
   // Keep the newest step in view as the timeline grows.
@@ -50,6 +60,9 @@ export default function Chat({ exchanges, busy, input, onInputChange, onSubmit, 
         {exchanges.map((ex, i) => (
           <div key={i} className="exchange">
             <div className="question">{ex.question}</div>
+            {ex.image && (
+              <img className="exchange-image" src={ex.image} alt="Attached by the user" />
+            )}
             <StepTimeline steps={ex.steps} />
             {ex.streaming && (
               // The live typewriter feed: the model's output as it streams,
@@ -68,6 +81,33 @@ export default function Chat({ exchanges, busy, input, onInputChange, onSubmit, 
       </div>
 
       <form className="composer" onSubmit={onSubmit}>
+        {pendingImage ? (
+          <div className="attach-preview">
+            <img src={pendingImage} alt="Attachment preview" />
+            <button
+              type="button"
+              className="attach-remove"
+              onClick={onClearImage}
+              aria-label="Remove image"
+            >
+              ×
+            </button>
+          </div>
+        ) : (
+          <label className="attach-btn" title="Attach an image">
+            <input
+              type="file"
+              accept="image/*"
+              hidden
+              disabled={busy}
+              onChange={(e) => {
+                onPickImage(e.target.files[0]);
+                e.target.value = ""; // let the same file be re-picked later
+              }}
+            />
+            <ImageIcon />
+          </label>
+        )}
         <input
           type="text"
           value={input}
@@ -75,10 +115,21 @@ export default function Chat({ exchanges, busy, input, onInputChange, onSubmit, 
           onChange={(e) => onInputChange(e.target.value)}
           disabled={busy}
         />
-        <button type="submit" disabled={busy || !input.trim()}>
+        <button type="submit" disabled={busy || (!input.trim() && !pendingImage)}>
           {busy ? "…" : "Ask"}
         </button>
       </form>
     </div>
+  );
+}
+
+// A simple picture glyph for the attach button (inline so there's no asset load).
+function ImageIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <rect x="3" y="3" width="18" height="18" rx="3" stroke="currentColor" strokeWidth="2" />
+      <circle cx="8.5" cy="8.5" r="1.5" fill="currentColor" />
+      <path d="M21 15l-5-5L5 21" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+    </svg>
   );
 }
