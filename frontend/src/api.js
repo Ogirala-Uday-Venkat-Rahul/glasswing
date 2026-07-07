@@ -65,7 +65,7 @@ export async function getConversation(id, apiBase = API_BASE) {
 }
 
 export async function uploadImage(file, apiBase = API_BASE) {
-  // Upload one image and get back its opaque R2 object key, which we then send
+  // Upload one image and get back its opaque storage object key, which we then send
   // with the chat message. Multipart form, and credentials so the upload is tied
   // to the signed-in user. Surfaces the server's reason (unsupported type, too
   // large, not configured) so the UI can show something useful.
@@ -120,7 +120,7 @@ export async function* streamChat(message, { conversationId = null, imageKey = n
     credentials: "include",
     // conversation_id is null on the first turn (the server mints one) and the
     // saved id on later turns (the server loads that thread's history). image_key
-    // is the R2 key from a prior /upload when the user attached a picture.
+    // is the storage key from a prior /upload when the user attached a picture.
     body: JSON.stringify({ message, conversation_id: conversationId, image_key: imageKey }),
   });
   if (!res.ok || !res.body) {

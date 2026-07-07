@@ -17,7 +17,7 @@ router = APIRouter()
 def _message_json(m):
     """Shape a stored message for the client, presigning any attached image.
 
-    The database keeps only the R2 object key; here we turn it into a short-lived
+    The database keeps only the storage object key; here we turn it into a short-lived
     view URL so the browser can redisplay the picture on reload. If storage isn't
     configured (or presigning fails), we simply omit the image rather than error.
     """

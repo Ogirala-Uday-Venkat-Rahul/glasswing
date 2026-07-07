@@ -1,28 +1,28 @@
 """Tests for the vision path (build step 5).
 
-Two pieces, both checkable with no real R2 credentials and no live model: the
-storage seam is decided purely by configuration, and building the multimodal user
-message is a pure function.
+Two pieces, both checkable with no real storage credentials and no live model:
+the storage seam is decided purely by configuration, and building the multimodal
+user message is a pure function.
 """
 
 import agent.loop as loop
 from backend import storage
 
-_R2_KEYS = ("R2_ACCOUNT_ID", "R2_ACCESS_KEY_ID", "R2_SECRET_ACCESS_KEY", "R2_BUCKET")
+_S3_KEYS = ("S3_ENDPOINT", "S3_ACCESS_KEY_ID", "S3_SECRET_ACCESS_KEY", "S3_BUCKET")
 
 
 def test_storage_disabled_without_credentials(monkeypatch):
-    for key in _R2_KEYS:
+    for key in _S3_KEYS:
         monkeypatch.delenv(key, raising=False)
     assert storage.is_enabled() is False
 
 
 def test_storage_enabled_only_when_all_credentials_present(monkeypatch):
-    for key in _R2_KEYS:
+    for key in _S3_KEYS:
         monkeypatch.setenv(key, "x")
     assert storage.is_enabled() is True
     # Missing any single one turns it back off.
-    monkeypatch.delenv("R2_BUCKET")
+    monkeypatch.delenv("S3_BUCKET")
     assert storage.is_enabled() is False
 
 
@@ -40,9 +40,9 @@ def test_user_content_is_plain_text_without_images():
 
 
 def test_user_content_is_multimodal_with_images():
-    content = loop._user_content("what is this?", ["https://r2/one", "https://r2/two"])
+    content = loop._user_content("what is this?", ["https://store/one", "https://store/two"])
     assert content == [
         {"type": "text", "text": "what is this?"},
-        {"type": "image_url", "image_url": {"url": "https://r2/one"}},
-        {"type": "image_url", "image_url": {"url": "https://r2/two"}},
+        {"type": "image_url", "image_url": {"url": "https://store/one"}},
+        {"type": "image_url", "image_url": {"url": "https://store/two"}},
     ]

@@ -29,13 +29,14 @@ frontend (Vite + React, Vercel)
    |  SSE
 backend (FastAPI, Cloud Run)
    |            |               |
- agent loop   Neon Postgres    Cloudflare R2
+ agent loop   Neon Postgres    Object storage
  (Groq)       text records     image blobs
 ```
 
 - **Text** (users, conversations, messages) lives in Neon Postgres. A real schema
   gives transactions, queries, and sorting.
-- **Images** live in Cloudflare R2. The database stores only the R2 object key, never
+- **Images** live in S3-compatible object storage (Supabase Storage; swappable for
+  R2 or Backblaze via one env var). The database stores only the object key, never
   the bytes. Right tool for each job.
 - **Tracing** is optional. `agent/trace.py` is a no-op unless a Langfuse key is
   present, so the core loop stays clean and observability is a seam you can turn on.
@@ -50,7 +51,7 @@ backend (FastAPI, Cloud Run)
 | Backend      | FastAPI, SSE                                       |
 | Frontend     | Vite + React                                       |
 | Database     | Neon Postgres                                      |
-| Image store  | Cloudflare R2                                      |
+| Image store  | S3-compatible (Supabase Storage / R2 / Backblaze)  |
 | Auth         | Google OAuth                                       |
 | Tracing      | Langfuse (optional)                                |
 | Hosting      | Cloud Run (backend) + Vercel (frontend)           |
@@ -64,7 +65,7 @@ Each layer is testable before the next one starts.
 2. FastAPI `/chat` SSE endpoint, no auth. Verify with curl.
 3. Neon plus conversation history.
 4. Google OAuth.
-5. R2 image persistence (object-key pointer pattern).
+5. Image persistence in S3-compatible storage (object-key pointer pattern).
 6. Custom frontend: chat, step timeline, image upload, login.
 7. Deploy to Cloud Run and Vercel, wire CORS and redirect URIs.
 8. Documentation.
@@ -112,7 +113,7 @@ backend/
   db.py          Neon engine and session factory (optional seam)
   models.py      User / Conversation / Message
   store.py       conversation history queries
-  storage.py     R2 upload and presigned URLs
+  storage.py     S3-compatible upload and presigned URLs
 frontend/
   src/
     App.jsx          auth gate: sign-in screen or the workspace

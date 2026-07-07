@@ -64,7 +64,7 @@ export default function Workspace() {
     const preview = imageFile ? URL.createObjectURL(imageFile) : null;
     setExchanges((prev) => [...prev, { question, image: preview, steps: [], streaming: "" }]);
 
-    // If a picture is attached, upload it first to get its R2 key. A failed
+    // If a picture is attached, upload it first to get its storage key. A failed
     // upload stops here with an error step rather than sending a broken turn.
     let imageKey = null;
     if (imageFile) {

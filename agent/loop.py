@@ -90,7 +90,7 @@ def _user_content(text, images):
     we send the OpenAI-style content list the vision model expects: one text block
     followed by an image_url block per picture, each url a short-lived presigned
     link the model fetches. The agent core stays storage-agnostic — it's handed
-    ready URLs and never knows they point at R2.
+    ready URLs and never knows where they point.
     """
     if not images:
         return text
@@ -146,7 +146,7 @@ def run(user_message: str, on_step=None, history=None, memories=None, remember=N
     memory, exactly as before, so a logged-out or DB-less run is unchanged.
 
     images, if given, is a list of already-usable image URLs (short-lived presigned
-    R2 links) to attach to this turn, turning the user message into multimodal
+    storage links) to attach to this turn, turning the user message into multimodal
     content the vision model can see. Only this turn's images are sent; past turns'
     images are not replayed (they'd re-bill heavy image tokens every step). Omitted
     -> a plain text turn, unchanged.

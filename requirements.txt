@@ -22,7 +22,7 @@ psycopg[binary]      # Neon Postgres driver (psycopg 3)
 itsdangerous         # signs the session + state cookies (HMAC over a payload)
 
 # --- Image storage (build step 5) ---
-boto3                # R2 is S3-compatible
+boto3                # S3-compatible storage (Supabase, R2, Backblaze)
 
 # --- Observability (optional; off unless LANGFUSE_* set) ---
 # langfuse

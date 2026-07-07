@@ -6,7 +6,7 @@ Keeping upload separate from /chat means the (potentially large, slow) file
 transfer isn't tangled up in the SSE stream, and the key is a small, cheap thing
 to carry on the message.
 
-The bytes go to Cloudflare R2 (see backend/storage.py); nothing image-related
+The bytes go to object storage (see backend/storage.py); nothing image-related
 touches Postgres except the returned key, which the chat turn stores as a pointer.
 """
 
@@ -23,9 +23,9 @@ MAX_IMAGE_BYTES = 10 * 1024 * 1024
 
 @router.post("/upload")
 async def upload(request: Request, file: UploadFile = File(...)):
-    """Store one uploaded image in R2 and return its object key.
+    """Store one uploaded image in object storage and return its object key.
 
-    503 if image storage isn't configured (no R2 creds) — the frontend hides the
+    503 if image storage isn't configured (no storage creds) — the frontend hides the
     attach button in that case, but we guard the endpoint too. 415 for a file type
     the vision model can't read, 413 for one over the size cap.
     """

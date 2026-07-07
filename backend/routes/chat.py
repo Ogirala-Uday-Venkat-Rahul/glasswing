@@ -43,7 +43,7 @@ class ChatRequest(BaseModel):
     # Omitted on the first turn -> the server mints a new conversation id and
     # returns it. Sent back on later turns to continue the same conversation.
     conversation_id: str | None = None
-    # The R2 object key returned by /upload, when the user attached an image to
+    # The storage object key returned by /upload, when the user attached an image to
     # this turn. We presign it into a URL the vision model can fetch, and store the
     # key as a pointer on the message.
     image_key: str | None = None
@@ -115,9 +115,10 @@ async def chat(request: ChatRequest, http_request: Request):
                 except Exception as exc:  # noqa: BLE001 - memory is a bonus, not required
                     print(f"[chat] memory load failed, continuing without it: {exc}")
 
-        # If the user attached an image, presign its R2 key into a URL the vision
-        # model can fetch for this turn. Done outside the db block because images
-        # work with or without persistence; skipped cleanly if R2 isn't configured.
+        # If the user attached an image, presign its storage key into a URL the
+        # vision model can fetch for this turn. Done outside the db block because
+        # images work with or without persistence; skipped cleanly if storage isn't
+        # configured.
         images = None
         if request.image_key and storage.is_enabled():
             try:
