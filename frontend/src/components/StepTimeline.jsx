@@ -5,6 +5,9 @@
 // below the timeline; everything else (thinking, tool calls, tool results,
 // errors) is the transparency trail that leads up to it.
 
+import { useState } from "react";
+import Markdown from "./Markdown.jsx";
+
 const TOOL_LABELS = {
   calculator: "Calculator",
   web_search: "Web search",
@@ -18,12 +21,36 @@ function toolName(name) {
   return TOOL_LABELS[name] || name;
 }
 
+// Copies the answer text to the clipboard, with a brief "Copied" confirmation.
+// A staple of any chat tool -- people want the answer, not to reselect it. The
+// clipboard API can be blocked (permissions, insecure origin); we just swallow
+// that rather than surface an error for a convenience action.
+function CopyButton({ text }) {
+  const [copied, setCopied] = useState(false);
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      /* clipboard unavailable -- nothing to do */
+    }
+  }
+
+  return (
+    <button type="button" className="copy-btn" onClick={copy} title="Copy answer">
+      {copied ? "Copied" : "Copy"}
+    </button>
+  );
+}
+
 function StepRow({ step }) {
   if (step.type === "thinking") {
     return (
       <div className="step step-thinking">
         <span className="step-tag">thinking</span>
-        <span className="step-body">{step.content}</span>
+        <span className="step-body"><Markdown text={step.content} /></span>
       </div>
     );
   }
@@ -76,8 +103,11 @@ export default function StepTimeline({ steps }) {
       ))}
       {answer && (
         <div className="answer">
-          <span className="answer-tag">answer</span>
-          <div className="answer-body">{answer.content}</div>
+          <div className="answer-head">
+            <span className="answer-tag">answer</span>
+            <CopyButton text={answer.content} />
+          </div>
+          <div className="answer-body"><Markdown text={answer.content} /></div>
         </div>
       )}
     </div>

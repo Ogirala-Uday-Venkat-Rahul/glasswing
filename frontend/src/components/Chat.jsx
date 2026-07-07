@@ -7,7 +7,16 @@ import StepTimeline from "./StepTimeline.jsx";
 // and this pane stay in sync. Each exchange is one turn: the question plus the
 // steps the agent streamed answering it.
 
-export default function Chat({ exchanges, busy, input, onInputChange, onSubmit }) {
+// Starter prompts for an empty chat. Each is chosen to exercise a different
+// tool, so a first-time visitor sees the agent reach for the right one: unit
+// conversion + arithmetic, a live web search, and the clock.
+const EXAMPLES = [
+  "How many miles is a 42.195 km marathon, and at a 10-min/mile pace how long would it take?",
+  "What was SpaceX's most recent launch?",
+  "What's the date and time right now?",
+];
+
+export default function Chat({ exchanges, busy, input, onInputChange, onSubmit, onExample }) {
   const bottomRef = useRef(null);
 
   // Keep the newest step in view as the timeline grows.
@@ -20,7 +29,22 @@ export default function Chat({ exchanges, busy, input, onInputChange, onSubmit }
       <div className="exchanges">
         {exchanges.length === 0 && (
           <div className="empty">
-            Ask a question and watch the agent think, use its tools, and answer.
+            <p className="empty-lead">
+              Ask a question and watch the agent think, use its tools, and answer.
+            </p>
+            <div className="examples">
+              {EXAMPLES.map((ex) => (
+                <button
+                  key={ex}
+                  type="button"
+                  className="example"
+                  onClick={() => onExample(ex)}
+                  disabled={busy}
+                >
+                  {ex}
+                </button>
+              ))}
+            </div>
           </div>
         )}
         {exchanges.map((ex, i) => (

@@ -89,6 +89,12 @@ export default function Workspace() {
     ask(question);
   }
 
+  // An example prompt was clicked on the empty screen: ask it straight away.
+  function askExample(question) {
+    if (busy) return;
+    ask(question);
+  }
+
   async function selectConversation(id) {
     if (busy || id === activeId) return;
     try {
@@ -121,6 +127,7 @@ export default function Workspace() {
         input={input}
         onInputChange={setInput}
         onSubmit={onSubmit}
+        onExample={askExample}
       />
     </div>
   );

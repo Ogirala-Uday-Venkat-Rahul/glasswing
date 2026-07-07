@@ -4,6 +4,22 @@
 //
 // Purely presentational -- Workspace owns the data and the handlers.
 
+// A compact "how long ago" label from an ISO timestamp, so the list reads as a
+// history and not just a stack of titles. Falls back to a plain date past a week.
+function relativeTime(iso) {
+  const then = new Date(iso).getTime();
+  if (Number.isNaN(then)) return "";
+  const secs = Math.max(0, Math.round((Date.now() - then) / 1000));
+  if (secs < 60) return "just now";
+  const mins = Math.round(secs / 60);
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.round(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.round(hrs / 24);
+  if (days < 7) return `${days}d ago`;
+  return new Date(iso).toLocaleDateString();
+}
+
 export default function Sidebar({ conversations, activeId, onSelect, onNew, busy }) {
   return (
     <aside className="sidebar">
@@ -23,7 +39,8 @@ export default function Sidebar({ conversations, activeId, onSelect, onNew, busy
               disabled={busy}
               title={c.title}
             >
-              {c.title}
+              <span className="recent-title">{c.title}</span>
+              <span className="recent-time">{relativeTime(c.created_at)}</span>
             </button>
           ))
         )}

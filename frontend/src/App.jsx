@@ -49,6 +49,9 @@ export default function App() {
       ) : me.authenticated ? (
         <>
           <div className="userbar">
+            <span className="avatar" aria-hidden="true">
+              {me.user.email[0].toUpperCase()}
+            </span>
             <span className="userbar-email">{me.user.email}</span>
             <button className="signout" onClick={signOut}>
               Sign out
