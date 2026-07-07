@@ -45,7 +45,7 @@ export default function Workspace() {
     setBusy(true);
     const index = exchanges.length; // where this turn's exchange will live
     const wasNew = activeId === null;
-    setExchanges((prev) => [...prev, { question, steps: [] }]);
+    setExchanges((prev) => [...prev, { question, steps: [], streaming: "" }]);
 
     try {
       for await (const step of streamChat(question, {
@@ -56,7 +56,14 @@ export default function Workspace() {
       })) {
         setExchanges((prev) => {
           const next = [...prev];
-          next[index] = { ...next[index], steps: [...next[index].steps, step] };
+          const ex = next[index];
+          if (step.type === "token") {
+            // A live chunk of the model's output: grow the typewriter preview.
+            next[index] = { ...ex, streaming: (ex.streaming || "") + (step.content || "") };
+          } else {
+            // A committed step (thinking, tool, answer) supersedes the preview.
+            next[index] = { ...ex, streaming: "", steps: [...ex.steps, step] };
+          }
           return next;
         });
       }
@@ -64,7 +71,7 @@ export default function Workspace() {
       setExchanges((prev) => {
         const next = [...prev];
         const errStep = { type: "error", content: `Could not reach the agent: ${err.message}` };
-        next[index] = { ...next[index], steps: [...next[index].steps, errStep] };
+        next[index] = { ...next[index], streaming: "", steps: [...next[index].steps, errStep] };
         return next;
       });
     } finally {

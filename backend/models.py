@@ -71,6 +71,26 @@ class Conversation(Base):
     )
 
 
+class Memory(Base):
+    """A durable fact about a user, remembered across all their conversations.
+
+    This is what makes the agent feel like it *knows* you rather than starting
+    cold every chat. The agent writes rows here through its `remember` tool when
+    you share something worth keeping (your name, preferences, ongoing work); at
+    the start of every run we load them back and put them in the agent's context.
+
+    Scoped to a user, not a conversation -- that is the whole point. A fact you
+    told the agent in one chat is available in the next. No login, no memory.
+    """
+
+    __tablename__ = "memories"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
+    content: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+
 class Message(Base):
     __tablename__ = "messages"
 

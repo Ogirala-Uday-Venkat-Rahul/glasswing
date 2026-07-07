@@ -11,6 +11,7 @@ const TOOL_LABELS = {
   fetch_url: "Read page",
   current_datetime: "Current date/time",
   convert: "Unit convert",
+  remember: "Remember",
 };
 
 function toolName(name) {

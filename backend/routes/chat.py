@@ -30,6 +30,7 @@ from pydantic import BaseModel
 from sse_starlette.sse import EventSourceResponse
 
 from agent.loop import run
+from agent.tools.remember import make_remember_tool
 
 from .. import auth, store
 from ..db import new_session
@@ -79,6 +80,8 @@ async def chat(request: ChatRequest, http_request: Request):
         db = new_session()  # None if DATABASE_URL is not configured
 
         history = []
+        memories = None
+        remember_tool = None
         if db is not None:
             # Persistence failures must not fail the chat: fall back to a
             # stateless run rather than 500 if the database is momentarily down.
@@ -94,8 +97,26 @@ async def chat(request: ChatRequest, http_request: Request):
                 db.rollback()
                 print(f"[chat] history load/save failed, continuing stateless: {exc}")
 
+            # Long-term memory is per-user, so it only applies when signed in.
+            # Load what we already know (recall) and bind a save tool to this
+            # user + session (capture) for the agent to call mid-run.
+            if user_id is not None:
+                try:
+                    memories = store.list_memories(db, user_id)
+                    remember_tool = make_remember_tool(
+                        lambda fact: store.add_memory(db, user_id, fact)
+                    )
+                except Exception as exc:  # noqa: BLE001 - memory is a bonus, not required
+                    print(f"[chat] memory load failed, continuing without it: {exc}")
+
         try:
-            answer = run(request.message, on_step=on_step, history=history)
+            answer = run(
+                request.message,
+                on_step=on_step,
+                history=history,
+                memories=memories,
+                remember=remember_tool,
+            )
             if db is not None:
                 try:
                     store.add_message(db, conversation_id, "assistant", answer)

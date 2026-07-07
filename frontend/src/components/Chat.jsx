@@ -27,6 +27,17 @@ export default function Chat({ exchanges, busy, input, onInputChange, onSubmit }
           <div key={i} className="exchange">
             <div className="question">{ex.question}</div>
             <StepTimeline steps={ex.steps} />
+            {ex.streaming && (
+              // The live typewriter feed: the model's output as it streams,
+              // before the committed step (thinking or answer) replaces it.
+              <div className="step step-thinking step-streaming">
+                <span className="step-tag">writing</span>
+                <span className="step-body">
+                  {ex.streaming}
+                  <span className="stream-cursor" />
+                </span>
+              </div>
+            )}
           </div>
         ))}
         <div ref={bottomRef} />

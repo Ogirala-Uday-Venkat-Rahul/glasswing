@@ -8,12 +8,55 @@ Uses the SQLAlchemy 2.0 select() style throughout.
 
 from sqlalchemy import select
 
-from .models import Conversation, Message, User
+from .models import Conversation, Memory, Message, User
+
+# How many remembered facts we load back into the agent's context per run. A cap
+# so a chatty user's memory can't grow the prompt without bound; newest kept.
+MAX_MEMORIES = 40
 
 # How many past messages we replay into the agent. A conversation can grow
 # without bound, and the loop re-sends its whole context on every model call, so
 # we feed back only the most recent slice rather than the entire history.
 MAX_HISTORY_MESSAGES = 20
+
+
+def add_memory(db, user_id, content):
+    """Save one durable fact about a user. Commits itself (called mid-agent-run).
+
+    Skips an exact duplicate so the agent re-stating a fact it already knows
+    doesn't pile up identical rows. Light on purpose -- near-duplicates ("likes
+    ramen" vs "loves ramen") still both save; real dedup would need embeddings,
+    which is more than a portfolio memory needs.
+    """
+    content = (content or "").strip()
+    if not content:
+        return None
+    exists = db.scalars(
+        select(Memory).where(Memory.user_id == user_id, Memory.content == content)
+    ).first()
+    if exists:
+        return exists
+    mem = Memory(user_id=user_id, content=content)
+    db.add(mem)
+    db.commit()
+    return mem
+
+
+def list_memories(db, user_id):
+    """A user's remembered facts as plain strings, newest first, capped.
+
+    Returned oldest-first so the injected context reads in the order they were
+    learned; we take the newest MAX_MEMORIES then reverse.
+    """
+    stmt = (
+        select(Memory)
+        .where(Memory.user_id == user_id)
+        .order_by(Memory.id.desc())
+        .limit(MAX_MEMORIES)
+    )
+    recent = list(db.scalars(stmt))
+    recent.reverse()
+    return [m.content for m in recent]
 
 
 def get_or_create_user(db, email):

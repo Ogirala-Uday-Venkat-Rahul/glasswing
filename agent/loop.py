@@ -15,6 +15,7 @@ import json
 from . import grounding, llm, trace
 from .schemas import Step
 from .tools import TOOLS, SCHEMAS
+from .tools.remember import SCHEMA as REMEMBER_SCHEMA
 
 # Hard stop so a confused model can never loop forever (each pass is a paid
 # model call). If we hit this, we report an error rather than hang.
@@ -80,7 +81,33 @@ def _for_model(messages):
     return trimmed
 
 
-def run(user_message: str, on_step=None, history=None) -> str:
+def _system_content(memories, can_remember) -> str:
+    """The system prompt, plus what the agent knows about this user this run.
+
+    Remembered facts are folded into the single system message (rather than a
+    second one) so every provider handles it the same way. When the remember
+    tool is available we also nudge the model to use it, so saving a new fact is
+    a habit and not something it only does when explicitly asked.
+    """
+    content = SYSTEM_PROMPT
+    if memories:
+        facts = "\n".join(f"- {m}" for m in memories)
+        content += (
+            "\n\nWhat you already know about this user, from earlier "
+            f"conversations:\n{facts}\n"
+            "Use these facts naturally when relevant; don't ask for what you "
+            "already know."
+        )
+    if can_remember:
+        content += (
+            "\n\nWhen the user shares a durable fact about themselves (their name, "
+            "preferences, ongoing projects), call the remember tool to save it for "
+            "next time."
+        )
+    return content
+
+
+def run(user_message: str, on_step=None, history=None, memories=None, remember=None) -> str:
     """Run the agent to completion and return its final answer text.
 
     on_step, if given, is called with each Step as it happens (this is how the
@@ -92,9 +119,24 @@ def run(user_message: str, on_step=None, history=None) -> str:
     stateless call into a multi-turn one. We store and replay only those durable
     turns, never the tool-call scratch a run generates, so the replayed context
     stays small. Defaulting to None keeps a plain single-shot call unchanged.
+
+    memories / remember add per-user long-term memory, and are supplied by the
+    backend (which alone knows the user). memories is a list of remembered facts
+    injected into the system prompt (recall); remember is a bound tool the agent
+    can call to save a new fact (capture). Both omitted -> the agent runs with no
+    memory, exactly as before, so a logged-out or DB-less run is unchanged.
     """
     tracer = trace.start_trace("agent_run")
-    messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+
+    # Only the tools for this run: the always-on set, plus remember when the
+    # backend supplied a bound one. The core never hard-codes the memory tool.
+    active_tools = dict(TOOLS)
+    active_schemas = list(SCHEMAS)
+    if remember is not None:
+        active_tools["remember"] = remember
+        active_schemas.append(REMEMBER_SCHEMA)
+
+    messages = [{"role": "system", "content": _system_content(memories, remember is not None)}]
     if history:
         messages.extend(history)
     messages.append({"role": "user", "content": user_message})
@@ -103,6 +145,13 @@ def run(user_message: str, on_step=None, history=None) -> str:
         tracer.event(step)
         if on_step is not None:
             on_step(step)
+
+    def emit_token(text: str) -> None:
+        # The live typewriter feed. Deliberately skips the tracer: tokens are an
+        # ephemeral preview, and the committed thinking / final_answer step that
+        # follows is what the trace records. Nothing to show -> nothing emitted.
+        if on_step is not None:
+            on_step(Step("token", content=text))
 
     def ask_model(tools=None):
         """Call the model, degrading gracefully if the provider errors.
@@ -114,14 +163,14 @@ def run(user_message: str, on_step=None, history=None) -> str:
         ever crash the run with a raw traceback.
         """
         try:
-            return llm.chat(_for_model(messages), tools=tools)
+            return llm.chat(_for_model(messages), tools=tools, on_token=emit_token)
         except llm.LLMError as exc:
             emit(Step("error", content=f"The model call failed: {exc}"))
             tracer.end()
             return None
 
     for _ in range(MAX_STEPS):
-        message = ask_model(tools=SCHEMAS)
+        message = ask_model(tools=active_schemas)
         if message is None:
             return "Sorry — I couldn't reach the model just now. Please try again."
 
@@ -166,7 +215,7 @@ def run(user_message: str, on_step=None, history=None) -> str:
 
             emit(Step("tool_call", tool=name, args=args))
 
-            tool = TOOLS.get(name)
+            tool = active_tools.get(name)
             if tool is None:
                 result = f"Unknown tool: {name}"
             else:

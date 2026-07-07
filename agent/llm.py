@@ -6,6 +6,8 @@ this one file.
 """
 
 import os
+from types import SimpleNamespace
+
 import groq
 from groq import Groq
 
@@ -50,13 +52,17 @@ def _get_client() -> Groq:
     return _client
 
 
-def chat(messages, tools=None, tier="primary", temperature=0):
+def chat(messages, tools=None, tier="primary", temperature=0, on_token=None):
     """Send one turn to the model and return the assistant message.
 
     messages     the running conversation (system, user, assistant, tool)
     tools        the JSON tool schemas, or None for a plain call
     tier         "primary" or "fallback" (keys of MODELS)
     temperature  0 by default so routing and tool choice are reproducible
+    on_token     if given, stream the reply and call on_token(text) for each
+                 content chunk as it arrives. The assembled message is still
+                 returned, so the caller's logic is identical either way -- the
+                 only difference is the live feed. None -> one blocking call.
     """
     config = MODELS[tier]
     kwargs = {
@@ -78,6 +84,8 @@ def chat(messages, tools=None, tier="primary", temperature=0):
         kwargs["parallel_tool_calls"] = True
 
     try:
+        if on_token is not None:
+            return _chat_streaming(kwargs, on_token)
         response = _get_client().chat.completions.create(**kwargs)
     except groq.APIError as exc:
         # Covers rate limits, bad-status responses, and connection failures
@@ -85,3 +93,51 @@ def chat(messages, tools=None, tier="primary", temperature=0):
         # depend on agent.llm, not on groq.
         raise LLMError(str(exc)) from exc
     return response.choices[0].message
+
+
+def _chat_streaming(kwargs, on_token):
+    """Stream the completion, feeding each text chunk to on_token as it lands.
+
+    The chunks arrive as deltas: content comes in pieces, and tool calls come in
+    pieces too (name first, then the JSON arguments a few characters at a time).
+    We rebuild both into the same message shape the non-streaming call returns,
+    so the loop downstream cannot tell the difference -- it still sees one message
+    with .content and .tool_calls. Only the live typing feed is new.
+    """
+    stream = _get_client().chat.completions.create(**kwargs, stream=True)
+
+    content_parts = []
+    # index -> the tool call being assembled at that position in the batch.
+    calls: dict[int, dict] = {}
+
+    for chunk in stream:
+        if not chunk.choices:
+            continue
+        delta = chunk.choices[0].delta
+
+        if delta.content:
+            content_parts.append(delta.content)
+            on_token(delta.content)
+
+        for tcd in delta.tool_calls or []:
+            call = calls.setdefault(tcd.index, {"id": None, "name": "", "arguments": ""})
+            if tcd.id:
+                call["id"] = tcd.id
+            if tcd.function is not None:
+                if tcd.function.name:
+                    call["name"] = tcd.function.name
+                if tcd.function.arguments:
+                    call["arguments"] += tcd.function.arguments
+
+    # Reassemble into the object the loop expects (duck-typed with SimpleNamespace).
+    tool_calls = [
+        SimpleNamespace(
+            id=c["id"],
+            type="function",
+            function=SimpleNamespace(name=c["name"], arguments=c["arguments"]),
+        )
+        for _, c in sorted(calls.items())
+        if c["name"]
+    ]
+    content = "".join(content_parts)
+    return SimpleNamespace(content=content or None, tool_calls=tool_calls or None)
