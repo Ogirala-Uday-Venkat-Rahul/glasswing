@@ -46,3 +46,13 @@ def test_user_content_is_multimodal_with_images():
         {"type": "image_url", "image_url": {"url": "https://store/one"}},
         {"type": "image_url", "image_url": {"url": "https://store/two"}},
     ]
+
+
+def test_detached_image_note_added_only_when_flagged():
+    # No flag -> no note about a missing image.
+    plain = loop._system_content(None, False, image_detached=False)
+    assert "no longer see it" not in plain
+    # Flagged -> the model is told to be honest instead of confabulating.
+    detached = loop._system_content(None, False, image_detached=True)
+    assert "no longer see it" in detached
+    assert "may be inaccurate" in detached

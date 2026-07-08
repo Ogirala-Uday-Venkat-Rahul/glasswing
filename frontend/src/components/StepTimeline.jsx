@@ -92,7 +92,7 @@ function StepRow({ step }) {
   return null; // final_answer is rendered separately by the parent
 }
 
-export default function StepTimeline({ steps }) {
+export default function StepTimeline({ steps, fromImage = false }) {
   const trail = steps.filter((s) => s.type !== "final_answer");
   const answer = steps.find((s) => s.type === "final_answer");
 
@@ -104,12 +104,35 @@ export default function StepTimeline({ steps }) {
       {answer && (
         <div className="answer">
           <div className="answer-head">
-            <span className="answer-tag">answer</span>
+            <span className="answer-head-left">
+              <span className="answer-tag">answer</span>
+              {/* Grounded-honesty badge: this turn had an image attached, so the
+                  answer was read from the picture. Its absence on a later turn is
+                  the visible signal that the image was detached -- the app being
+                  transparent about where an answer came from. */}
+              {fromImage && (
+                <span className="answer-source" title="This answer was read from the image you attached">
+                  <ImageGlyph />
+                  Read from your image
+                </span>
+              )}
+            </span>
             <CopyButton text={answer.content} />
           </div>
           <div className="answer-body"><Markdown text={answer.content} /></div>
         </div>
       )}
     </div>
+  );
+}
+
+// A tiny picture glyph for the "read from your image" badge (inline, no asset).
+function ImageGlyph() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <rect x="3" y="3" width="18" height="18" rx="3" stroke="currentColor" strokeWidth="2" />
+      <circle cx="8.5" cy="8.5" r="1.5" fill="currentColor" />
+      <path d="M21 15l-5-5L5 21" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+    </svg>
   );
 }

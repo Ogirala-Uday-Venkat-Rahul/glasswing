@@ -141,6 +141,25 @@ def conversation_messages(db, conversation_id):
     return list(db.scalars(stmt))
 
 
+def conversation_has_image(db, conversation_id):
+    """Whether any message in this conversation ever carried an attached image.
+
+    Used to tell the agent that an image was shared earlier even when the current
+    turn doesn't attach one -- so it won't confidently answer visual questions
+    about a picture it can no longer see. A cheap existence check (LIMIT 1 on the
+    indexed conversation_id), not a full scan.
+    """
+    stmt = (
+        select(Message.id)
+        .where(
+            Message.conversation_id == conversation_id,
+            Message.image_key.is_not(None),
+        )
+        .limit(1)
+    )
+    return db.scalars(stmt).first() is not None
+
+
 def load_history(db, conversation_id):
     """Prior turns as [{"role", "content"}] to replay into the agent.
 

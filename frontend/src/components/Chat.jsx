@@ -63,7 +63,7 @@ export default function Chat({
             {ex.image && (
               <img className="exchange-image" src={ex.image} alt="Attached by the user" />
             )}
-            <StepTimeline steps={ex.steps} />
+            <StepTimeline steps={ex.steps} fromImage={!!ex.image} />
             {ex.streaming && (
               // The live typewriter feed: the model's output as it streams,
               // before the committed step (thinking or answer) replaces it.

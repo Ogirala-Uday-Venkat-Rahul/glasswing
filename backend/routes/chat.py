@@ -126,6 +126,17 @@ async def chat(request: ChatRequest, http_request: Request):
             except Exception as exc:  # noqa: BLE001 - a bad key shouldn't sink the chat
                 print(f"[chat] could not presign image, continuing without it: {exc}")
 
+        # Did this conversation show an image earlier that ISN'T attached now (the
+        # user removed it)? If so the model can no longer see it, so we flag that
+        # to keep it honest instead of confabulating. Only worth checking when this
+        # turn has no image of its own and we have a database to look in.
+        image_detached = False
+        if db is not None and not request.image_key:
+            try:
+                image_detached = store.conversation_has_image(db, conversation_id)
+            except Exception as exc:  # noqa: BLE001 - a nicety, never fail the chat
+                print(f"[chat] image-context check failed, continuing: {exc}")
+
         try:
             answer = run(
                 request.message,
@@ -134,6 +145,7 @@ async def chat(request: ChatRequest, http_request: Request):
                 memories=memories,
                 remember=remember_tool,
                 images=images,
+                image_detached=image_detached,
             )
             if db is not None:
                 try:

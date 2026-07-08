@@ -100,3 +100,16 @@ def test_delete_conversation_is_scoped_to_the_owner(db):
 
 def test_delete_missing_conversation_returns_none(db):
     assert store.delete_conversation(db, "nope", user_id="u1") is None
+
+
+def test_conversation_has_image_tracks_attachments(db):
+    store.create_conversation(db, "text-only")
+    store.add_message(db, "text-only", "user", "hi")
+    store.create_conversation(db, "with-pic")
+    store.add_message(db, "with-pic", "user", "look", image_key="uploads/u1/p.png")
+    store.add_message(db, "with-pic", "assistant", "a jersey")
+    db.commit()
+
+    assert store.conversation_has_image(db, "with-pic") is True
+    assert store.conversation_has_image(db, "text-only") is False
+    assert store.conversation_has_image(db, "missing") is False

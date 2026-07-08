@@ -100,7 +100,7 @@ def _user_content(text, images):
     return blocks
 
 
-def _system_content(memories, can_remember) -> str:
+def _system_content(memories, can_remember, image_detached=False) -> str:
     """The system prompt, plus what the agent knows about this user this run.
 
     Remembered facts are folded into the single system message (rather than a
@@ -123,10 +123,23 @@ def _system_content(memories, can_remember) -> str:
             "preferences, ongoing projects), call the remember tool to save it for "
             "next time."
         )
+    if image_detached:
+        # An image was shared earlier but is not attached now (the user removed
+        # it). The model can't see it any more -- only the text of the earlier
+        # turns remains -- so tell it to be honest instead of confabulating visual
+        # details. This is the "grounded honesty" the whole app is named for.
+        content += (
+            "\n\nAn image was shared earlier in this conversation but is NOT "
+            "attached to the current message, so you can no longer see it. If the "
+            "user asks about the picture's visual details, say plainly that you "
+            "don't have the image in front of you now and that anything you offer "
+            "is drawn from the earlier conversation and may be inaccurate -- do not "
+            "invent or guess visual details you cannot currently see."
+        )
     return content
 
 
-def run(user_message: str, on_step=None, history=None, memories=None, remember=None, images=None) -> str:
+def run(user_message: str, on_step=None, history=None, memories=None, remember=None, images=None, image_detached=False) -> str:
     """Run the agent to completion and return its final answer text.
 
     on_step, if given, is called with each Step as it happens (this is how the
@@ -150,6 +163,12 @@ def run(user_message: str, on_step=None, history=None, memories=None, remember=N
     content the vision model can see. Only this turn's images are sent; past turns'
     images are not replayed (they'd re-bill heavy image tokens every step). Omitted
     -> a plain text turn, unchanged.
+
+    image_detached says an image was shared earlier in this conversation but is not
+    attached to this turn (the user removed it). Since past images aren't replayed,
+    the model literally can't see it any more; this flag adds a note telling it to
+    be honest about that instead of confabulating visual details from the text. It
+    is ignored when images are present (we can see one, so nothing was lost).
     """
     tracer = trace.start_trace("agent_run")
 
@@ -161,7 +180,14 @@ def run(user_message: str, on_step=None, history=None, memories=None, remember=N
         active_tools["remember"] = remember
         active_schemas.append(REMEMBER_SCHEMA)
 
-    messages = [{"role": "system", "content": _system_content(memories, remember is not None)}]
+    messages = [
+        {
+            "role": "system",
+            # The caveat only applies when we truly can't see an image: if images
+            # are attached this turn, ignore the detached flag.
+            "content": _system_content(memories, remember is not None, image_detached and not images),
+        }
+    ]
     if history:
         messages.extend(history)
     messages.append({"role": "user", "content": _user_content(user_message, images)})

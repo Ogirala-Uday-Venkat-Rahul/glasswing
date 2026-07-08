@@ -687,6 +687,34 @@ body {
   gap: 12px;
 }
 
+.answer-head-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+/* "Read from your image" badge: marks an answer that was grounded in an attached
+   picture. Its presence/absence is the app being honest about the answer's source. */
+.answer-source {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border-2);
+  background: var(--answer-bg);
+  color: var(--accent-ink);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+.answer-source svg {
+  flex: 0 0 auto;
+}
+
 .answer-tag {
   font-size: 11px;
   text-transform: uppercase;
