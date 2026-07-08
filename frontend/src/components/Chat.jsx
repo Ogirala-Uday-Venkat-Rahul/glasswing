@@ -23,7 +23,7 @@ export default function Chat({
   onInputChange,
   onSubmit,
   onExample,
-  pendingImage,
+  attachedImage,
   onPickImage,
   onClearImage,
 }) {
@@ -81,14 +81,17 @@ export default function Chat({
       </div>
 
       <form className="composer" onSubmit={onSubmit}>
-        {pendingImage ? (
-          <div className="attach-preview">
-            <img src={pendingImage} alt="Attachment preview" />
+        {attachedImage ? (
+          <div
+            className="attach-preview"
+            title="This image stays attached to your messages. Click × to remove it."
+          >
+            <img src={attachedImage} alt="Attachment preview" />
             <button
               type="button"
               className="attach-remove"
               onClick={onClearImage}
-              aria-label="Remove image"
+              aria-label="Remove attached image"
             >
               ×
             </button>
@@ -115,7 +118,7 @@ export default function Chat({
           onChange={(e) => onInputChange(e.target.value)}
           disabled={busy}
         />
-        <button type="submit" disabled={busy || (!input.trim() && !pendingImage)}>
+        <button type="submit" disabled={busy || (!input.trim() && !attachedImage)}>
           {busy ? "…" : "Ask"}
         </button>
       </form>

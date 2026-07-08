@@ -33,17 +33,26 @@ export default function Workspace({ onAgentState }) {
   const [exchanges, setExchanges] = useState([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
-  // An image picked but not yet sent: { file, url } where url is a local preview.
-  const [pending, setPending] = useState(null);
+  // The active image attachment, or null. It stays attached across follow-up
+  // turns (a "sticky" image), so you can keep asking about the same picture --
+  // the model sees it again each turn -- until you remove it or pick another.
+  // Shape: { file, url, key } where url is a local preview and key is the storage
+  // key from the first upload (null until it has been uploaded once).
+  const [attachment, setAttachment] = useState(null);
 
   function pickImage(file) {
     if (!file) return;
-    setPending({ file, url: URL.createObjectURL(file) });
+    setAttachment((prev) => {
+      if (prev) URL.revokeObjectURL(prev.url); // release the one we're replacing
+      return { file, url: URL.createObjectURL(file), key: null };
+    });
   }
 
   function clearImage() {
-    if (pending) URL.revokeObjectURL(pending.url);
-    setPending(null);
+    setAttachment((prev) => {
+      if (prev) URL.revokeObjectURL(prev.url);
+      return null;
+    });
   }
 
   // Load the recents list once on mount.
@@ -61,22 +70,32 @@ export default function Workspace({ onAgentState }) {
     setTimeout(() => onAgentState?.("idle"), 1400);
   }
 
-  async function ask(question, imageFile) {
+  async function ask(question) {
     setBusy(true);
     onAgentState?.("working");
     const index = exchanges.length; // where this turn's exchange will live
     const wasNew = activeId === null;
-    // A fresh preview URL owned by this exchange (the composer's own preview is
-    // released on submit, so we don't share it).
-    const preview = imageFile ? URL.createObjectURL(imageFile) : null;
+    // Snapshot the attachment for this turn: the user can clear or replace it
+    // while the request is in flight, so we work from this fixed reference.
+    const att = attachment;
+    // A fresh preview URL owned by this exchange, so the transcript keeps showing
+    // the image even after the sticky attachment is later cleared or replaced
+    // (which revokes its own url). A sticky image rides along on every turn it's
+    // attached, and each of those turns shows it -- honest, since the model saw it.
+    const preview = att ? URL.createObjectURL(att.file) : null;
     setExchanges((prev) => [...prev, { question, image: preview, steps: [], streaming: "" }]);
 
-    // If a picture is attached, upload it first to get its storage key. A failed
-    // upload stops here with an error step rather than sending a broken turn.
-    let imageKey = null;
-    if (imageFile) {
+    // Make sure the attachment is uploaded and we have its storage key. We upload
+    // only once: a sticky image reuses the key it got the first time, so later
+    // turns don't re-upload the same bytes. A failed upload stops here with an
+    // error step rather than sending a broken turn.
+    let imageKey = att?.key || null;
+    if (att && !imageKey) {
       try {
-        imageKey = await uploadImage(imageFile);
+        imageKey = await uploadImage(att.file);
+        // Cache the key on the attachment so follow-up turns reuse it -- but only
+        // if the user hasn't swapped or cleared it while the upload was running.
+        setAttachment((cur) => (cur === att ? { ...cur, key: imageKey } : cur));
       } catch (err) {
         setExchanges((prev) => {
           const next = [...prev];
@@ -130,13 +149,12 @@ export default function Workspace({ onAgentState }) {
     e.preventDefault();
     // An image on its own is a valid turn — default the wording so the model has
     // something to answer.
-    const question = input.trim() || (pending ? "What's in this image?" : "");
+    const question = input.trim() || (attachment ? "What's in this image?" : "");
     if (!question || busy) return;
-    const imageFile = pending?.file || null;
-    if (pending) URL.revokeObjectURL(pending.url); // ask() makes its own preview
     setInput("");
-    setPending(null);
-    ask(question, imageFile);
+    // The attachment is deliberately NOT cleared here: it stays attached so the
+    // next message keeps referring to the same image. Remove it with the × when done.
+    ask(question);
   }
 
   // An example prompt was clicked on the empty screen: ask it straight away.
@@ -169,6 +187,7 @@ export default function Workspace({ onAgentState }) {
         activeId={activeId}
         onSelect={selectConversation}
         onNew={newChat}
+        onAskHeadline={askExample}
         busy={busy}
       />
       <Chat
@@ -178,7 +197,7 @@ export default function Workspace({ onAgentState }) {
         onInputChange={setInput}
         onSubmit={onSubmit}
         onExample={askExample}
-        pendingImage={pending?.url || null}
+        attachedImage={attachment?.url || null}
         onPickImage={pickImage}
         onClearImage={clearImage}
       />
