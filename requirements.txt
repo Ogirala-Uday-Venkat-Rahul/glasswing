@@ -1,4 +1,4 @@
-# Pinned to the versions the app was built and tested against, so the Cloud Run
+# Pinned to the versions the app was built and tested against, so the Render
 # build is reproducible. Grouped by the build step that introduced each one.
 
 # --- Agent core (build step 1) ---

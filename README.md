@@ -33,7 +33,7 @@ agent's decision process is hidden.
 ```
 frontend (Vite + React, Vercel)
    |  SSE
-backend (FastAPI, Cloud Run)
+backend (FastAPI, Render)
    |            |               |
  agent loop   Neon Postgres    Object storage
  (Groq)       text records     image blobs
@@ -60,7 +60,7 @@ backend (FastAPI, Cloud Run)
 | Image store  | S3-compatible (Supabase Storage / R2 / Backblaze)  |
 | Auth         | Google OAuth                                       |
 | Tracing      | Langfuse (optional)                                |
-| Hosting      | Cloud Run (backend) + Vercel (frontend)           |
+| Hosting      | Render (backend) + Vercel (frontend)              |
 
 ## Build order
 
@@ -73,7 +73,7 @@ Each layer is testable before the next one starts.
 4. Google OAuth.
 5. Image persistence in S3-compatible storage (object-key pointer pattern).
 6. Custom frontend: chat, step timeline, image upload, login.
-7. Deploy to Cloud Run and Vercel, wire CORS and redirect URIs.
+7. Deploy to Render and Vercel, wire CORS and redirect URIs.
 8. Documentation.
 
 ## Local development

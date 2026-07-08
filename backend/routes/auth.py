@@ -14,7 +14,7 @@ both /auth/login and /auth/callback 503 if either is missing. /auth/me and
 Cookie flags worth knowing (set the same way everywhere):
   * httponly=True  -- JavaScript cannot read the cookie, so an XSS bug can't
                       steal the session. Only the server ever sees it.
-  * samesite       -- In production the frontend (Vercel) and backend (Cloud Run)
+  * samesite       -- In production the frontend (Vercel) and backend (Render)
                       are different sites, so the browser only sends the session
                       cookie on the app's fetch/SSE calls if it is SameSite=None.
                       That in turn requires Secure. On http://localhost we can't
@@ -42,7 +42,7 @@ def _secure_cookies() -> bool:
 
 
 def _samesite() -> str:
-    # Cross-site in production (Vercel frontend -> Cloud Run backend), so the
+    # Cross-site in production (Vercel frontend -> Render backend), so the
     # cookie must be SameSite=None to ride along on the app's fetch/SSE calls.
     # None is only valid alongside Secure, so we key it off the same https signal:
     # https deploy -> "none", http localhost -> "lax".

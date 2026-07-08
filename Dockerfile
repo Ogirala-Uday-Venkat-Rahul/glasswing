@@ -1,4 +1,4 @@
-# Container image for the FastAPI backend, deployed to Cloud Run.
+# Container image for the FastAPI backend, deployed to Render.
 # The image holds only what the server needs at runtime: the two Python packages
 # (agent/ and backend/) and their dependencies. The frontend builds and ships
 # separately on Vercel, so it is not copied in (see .dockerignore).
@@ -21,7 +21,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY agent/ ./agent/
 COPY backend/ ./backend/
 
-# Cloud Run sends traffic to the port named in $PORT (8080 by default). Bind to
-# it and to 0.0.0.0 so the container is reachable from outside. Shell form so
-# $PORT is expanded at runtime.
+# Render sends traffic to the port named in $PORT. Bind to it and to 0.0.0.0 so
+# the container is reachable from outside. Shell form so $PORT is expanded at
+# runtime; the 8080 fallback lets the image also run on hosts that don't set it.
 CMD exec uvicorn backend.main:app --host 0.0.0.0 --port ${PORT:-8080}
