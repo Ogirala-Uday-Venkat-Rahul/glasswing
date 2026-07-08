@@ -11,6 +11,7 @@ python-dotenv==1.2.2         # load .env in dev
 fastapi==0.139.0
 uvicorn[standard]==0.49.0
 sse-starlette==3.4.5         # server-sent events for the step timeline
+python-multipart==0.0.32     # FastAPI needs this to parse the /upload multipart form
 
 # --- Persistence (build step 3) ---
 sqlalchemy==2.0.51           # ORM: User/Conversation/Message models + queries
