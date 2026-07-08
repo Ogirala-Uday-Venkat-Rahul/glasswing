@@ -89,6 +89,29 @@ def list_user_conversations(db, user_id):
     return list(db.scalars(stmt))
 
 
+def delete_conversation(db, conversation_id, user_id):
+    """Delete a conversation and its messages, if it belongs to this user.
+
+    Scoped by user_id: the conversation id travels in the URL, so the id alone
+    must not be enough to delete -- we only delete a row that both matches the id
+    AND is owned by the caller, so no one can wipe someone else's chat by guessing.
+    Returns the storage keys of any attached images (so the caller can clean up
+    those blobs), or None when there was nothing to delete (missing or not theirs).
+    The delete cascades to the messages via the relationship. Not committed here.
+    """
+    convo = db.scalars(
+        select(Conversation).where(
+            Conversation.id == conversation_id,
+            Conversation.user_id == user_id,
+        )
+    ).first()
+    if convo is None:
+        return None
+    image_keys = [m.image_key for m in convo.messages if m.image_key]
+    db.delete(convo)  # cascade="all, delete-orphan" removes the messages too
+    return image_keys
+
+
 def create_conversation(db, conversation_id, user_id=None, title=None):
     """Insert a new conversation row. Not committed here -- the caller commits."""
     convo = Conversation(id=conversation_id, user_id=user_id, title=title)

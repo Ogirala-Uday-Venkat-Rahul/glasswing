@@ -1,7 +1,13 @@
 import { useState, useEffect } from "react";
 import Sidebar from "./Sidebar.jsx";
 import Chat from "./Chat.jsx";
-import { streamChat, listConversations, getConversation, uploadImage } from "../api.js";
+import {
+  streamChat,
+  listConversations,
+  getConversation,
+  uploadImage,
+  deleteConversation as apiDeleteConversation,
+} from "../api.js";
 
 // The signed-in workspace: recents sidebar on the left, the active conversation
 // on the right. This component owns all conversation state so the two stay in
@@ -180,6 +186,20 @@ export default function Workspace({ onAgentState }) {
     setInput("");
   }
 
+  async function deleteConversation(id) {
+    const wasActive = id === activeId;
+    try {
+      await apiDeleteConversation(id);
+      if (wasActive) newChat(); // the open chat is gone -> clear the pane
+    } catch (err) {
+      // Non-fatal: the refresh below re-reads the truth (a failed delete simply
+      // leaves the chat in the list).
+      console.error("Could not delete conversation:", err);
+    } finally {
+      refreshConversations();
+    }
+  }
+
   return (
     <div className="workspace">
       <Sidebar
@@ -187,6 +207,7 @@ export default function Workspace({ onAgentState }) {
         activeId={activeId}
         onSelect={selectConversation}
         onNew={newChat}
+        onDelete={deleteConversation}
         onAskHeadline={askExample}
         busy={busy}
       />

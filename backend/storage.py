@@ -80,6 +80,16 @@ def upload_image(data: bytes, content_type: str, user_id: str | None = None) -> 
     return key
 
 
+def delete_object(key: str) -> None:
+    """Remove one stored object by key (used when a conversation is deleted).
+
+    Best-effort cleanup so a deleted chat doesn't leave its images orphaned in the
+    bucket. S3 delete is idempotent -- deleting a key that's already gone still
+    succeeds -- so this is safe to call without first checking the object exists.
+    """
+    _client().delete_object(Bucket=os.environ["S3_BUCKET"], Key=key)
+
+
 def view_url(key: str) -> str:
     """A short-lived presigned GET URL for an object key.
 

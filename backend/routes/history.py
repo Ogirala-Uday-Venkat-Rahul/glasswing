@@ -58,6 +58,41 @@ def list_conversations(request: Request):
         db.close()
 
 
+@router.delete("/conversations/{conversation_id}")
+def delete_conversation(conversation_id: str, request: Request):
+    """Delete one of the signed-in user's conversations, and its images.
+
+    Requires a session (deleting is owner-only) and scopes the delete to that
+    user, so the id in the URL can only ever remove the caller's own chat. The
+    database rows go first (in a transaction); the image blobs are then removed
+    best-effort -- a failed blob delete leaves an orphan but never fails the
+    request, since the conversation is already gone.
+    """
+    user_id = auth.read_session(request.cookies.get(auth.SESSION_COOKIE))
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Sign in to delete a conversation.")
+    if not is_enabled():
+        raise HTTPException(status_code=503, detail="History is not configured.")
+
+    db = new_session()
+    try:
+        image_keys = store.delete_conversation(db, conversation_id, user_id)
+        if image_keys is None:
+            raise HTTPException(status_code=404, detail="Conversation not found.")
+        db.commit()
+    finally:
+        db.close()
+
+    if storage.is_enabled():
+        for key in image_keys:
+            try:
+                storage.delete_object(key)
+            except Exception as exc:  # noqa: BLE001 - orphaned blob is harmless
+                print(f"[history] could not delete blob {key}: {exc}")
+
+    return {"deleted": conversation_id}
+
+
 @router.get("/history/{conversation_id}")
 def get_history(conversation_id: str):
     if not is_enabled():

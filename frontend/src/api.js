@@ -64,6 +64,18 @@ export async function getConversation(id, apiBase = API_BASE) {
   return data.messages || [];
 }
 
+export async function deleteConversation(id, apiBase = API_BASE) {
+  // Remove one of the signed-in user's conversations (and its images). Sends the
+  // session cookie so the server can check ownership. Throws on failure so the
+  // caller can decide what to do; the sidebar refreshes either way.
+  const res = await fetch(`${apiBase}/conversations/${id}`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error(`Could not delete conversation (${res.status})`);
+  return true;
+}
+
 export async function uploadImage(file, apiBase = API_BASE) {
   // Upload one image and get back its opaque storage object key, which we then send
   // with the chat message. Multipart form, and credentials so the upload is tied

@@ -71,3 +71,32 @@ def test_history_is_isolated_per_conversation(db):
 def test_unknown_conversation_is_empty(db):
     assert store.conversation_messages(db, "missing") == []
     assert store.load_history(db, "missing") == []
+
+
+def test_delete_conversation_removes_it_and_its_messages(db):
+    store.create_conversation(db, "c1", user_id="u1", title="hello")
+    store.add_message(db, "c1", "user", "hi", image_key="uploads/u1/pic.png")
+    store.add_message(db, "c1", "assistant", "hello there")
+    db.commit()
+
+    keys = store.delete_conversation(db, "c1", user_id="u1")
+    db.commit()
+
+    # It reports the attached image keys (for blob cleanup) and the rows are gone.
+    assert keys == ["uploads/u1/pic.png"]
+    assert store.conversation_messages(db, "c1") == []
+    assert store.list_user_conversations(db, "u1") == []
+
+
+def test_delete_conversation_is_scoped_to_the_owner(db):
+    store.create_conversation(db, "c1", user_id="owner")
+    store.add_message(db, "c1", "user", "mine")
+    db.commit()
+
+    # A different user can't delete it: nothing happens and it still exists.
+    assert store.delete_conversation(db, "c1", user_id="intruder") is None
+    assert [m.content for m in store.conversation_messages(db, "c1")] == ["mine"]
+
+
+def test_delete_missing_conversation_returns_none(db):
+    assert store.delete_conversation(db, "nope", user_id="u1") is None
