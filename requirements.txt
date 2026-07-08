@@ -1,31 +1,31 @@
-# Grows as we build layer by layer (see build order in README).
-# Unpinned for now; pin before deploy.
+# Pinned to the versions the app was built and tested against, so the Cloud Run
+# build is reproducible. Grouped by the build step that introduced each one.
 
 # --- Agent core (build step 1) ---
-groq                 # native tool-calling client (swappable seam in agent/llm.py)
-httpx                # HTTP for fetch_url + Tavily
-trafilatura          # main-content extraction (library, not hand-rolled)
-python-dotenv        # load .env in dev
+groq==1.5.0                  # native tool-calling client (swappable seam in agent/llm.py)
+httpx==0.28.1                # HTTP for fetch_url + web search
+trafilatura==2.1.0           # main-content extraction (library, not hand-rolled)
+python-dotenv==1.2.2         # load .env in dev
 
 # --- Backend / SSE (build step 2+) ---
-fastapi
-uvicorn[standard]
-sse-starlette        # server-sent events for the step timeline
+fastapi==0.139.0
+uvicorn[standard]==0.49.0
+sse-starlette==3.4.5         # server-sent events for the step timeline
 
 # --- Persistence (build step 3) ---
-sqlalchemy           # ORM: User/Conversation/Message models + queries
-psycopg[binary]      # Neon Postgres driver (psycopg 3)
+sqlalchemy==2.0.51           # ORM: User/Conversation/Message models + queries
+psycopg[binary]==3.3.4       # Neon Postgres driver (psycopg 3)
 
 # --- Auth (build step 4) ---
 # Google OAuth is hand-rolled on httpx (see backend/auth.py) -- no OAuth library,
 # so the whole authorization-code flow stays visible in one file.
-itsdangerous         # signs the session + state cookies (HMAC over a payload)
+itsdangerous==2.2.0          # signs the session + state cookies (HMAC over a payload)
 
 # --- Image storage (build step 5) ---
-boto3                # S3-compatible storage (Supabase, R2, Backblaze)
+boto3==1.43.41               # S3-compatible storage (Supabase, R2, Backblaze)
 
 # --- Observability (optional; off unless LANGFUSE_* set) ---
 # langfuse
 
 # --- Dev ---
-pytest
+pytest==9.1.1

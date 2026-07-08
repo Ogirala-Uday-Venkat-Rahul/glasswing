@@ -1,0 +1,12 @@
+# Keep the build context (and the image) to just the backend runtime.
+.git
+.venv
+frontend
+tests
+docs
+__pycache__
+*.pyc
+.pytest_cache
+.env
+.env.*
+!.env.example
