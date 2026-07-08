@@ -779,6 +779,124 @@ body {
   justify-content: center;
 }
 
+/* --- Opt-in headlines panel (sits under the recents list) --- */
+.news {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 12px;
+  margin-top: 2px;
+  border-top: 1px solid var(--border);
+}
+
+.news-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.news-toggle:hover {
+  color: var(--text);
+  background: var(--sheen);
+}
+
+/* A small pill switch that slides its knob and lights amber when on. */
+.news-switch {
+  flex: 0 0 auto;
+  position: relative;
+  width: 30px;
+  height: 17px;
+  border-radius: 9px;
+  background: var(--field);
+  border: 1px solid var(--border-2);
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.news-switch::after {
+  content: "";
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: var(--muted);
+  transition: transform 0.15s, background 0.15s;
+}
+
+.news-switch.is-on {
+  background: linear-gradient(180deg, var(--accent-ink), var(--accent));
+  border-color: var(--accent);
+}
+
+.news-switch.is-on::after {
+  transform: translateX(13px);
+  background: var(--send-ink);
+}
+
+.news-list {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.news-note {
+  margin: 0;
+  padding: 4px 8px;
+  color: var(--muted);
+  font-size: 12.5px;
+}
+
+.news-item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  text-align: left;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  min-width: 0;
+}
+
+.news-item:hover:not(:disabled) {
+  background: var(--sheen);
+  border-color: var(--border-2);
+}
+
+.news-item:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.news-item-title {
+  font-size: 12.5px;
+  line-height: 1.35;
+  color: var(--text);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.news-item-meta {
+  font-size: 10.5px;
+  color: var(--muted);
+  opacity: 0.85;
+}
+
 /* --- Boot / loading state (handles a cold backend gracefully) --- */
 .booting {
   display: flex;

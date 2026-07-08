@@ -90,6 +90,20 @@ export async function uploadImage(file, apiBase = API_BASE) {
   return data.image_key;
 }
 
+// --- News (opt-in headlines panel) ------------------------------------------
+
+export async function getNews(topic, apiBase = API_BASE) {
+  // A few current headlines for the opt-in sidebar panel. Public -- no auth or
+  // cookie needed. Returns [{ title, source, date, link }]. Throws on a failed
+  // request so the panel can show a "couldn't load" note; the backend itself
+  // returns an empty list (200) when news isn't configured.
+  const qs = topic ? `?topic=${encodeURIComponent(topic)}` : "";
+  const res = await fetch(`${apiBase}/news${qs}`);
+  if (!res.ok) throw new Error(`News request failed (${res.status})`);
+  const data = await res.json();
+  return data.headlines || [];
+}
+
 function parseFrame(frame) {
   // One SSE event block -> { event, data }, or null if it has no data line.
   // Per the SSE spec an event with no "event:" line defaults to "message"; our
