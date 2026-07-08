@@ -32,6 +32,14 @@ async def upload(request: Request, file: UploadFile = File(...)):
     if not storage.is_enabled():
         raise HTTPException(status_code=503, detail="Image upload is not configured.")
 
+    # Uploads must be attributable to a signed-in user. Anonymous uploads would
+    # let anyone push blobs into the bucket (a storage-cost / abuse vector) with
+    # nothing tying them to an owner, and every upload is namespaced by user id
+    # anyway. Require the session before reading a single byte.
+    user_id = auth.read_session(request.cookies.get(auth.SESSION_COOKIE))
+    if user_id is None:
+        raise HTTPException(status_code=401, detail="Sign in to upload images.")
+
     if not storage.is_allowed_type(file.content_type or ""):
         raise HTTPException(status_code=415, detail="Unsupported image type.")
 
@@ -41,8 +49,7 @@ async def upload(request: Request, file: UploadFile = File(...)):
     if not data:
         raise HTTPException(status_code=400, detail="Empty file.")
 
-    # Namespace the upload under the signed-in user when there is one, so a
-    # person's images live under one prefix. Anonymous uploads still work.
-    user_id = auth.read_session(request.cookies.get(auth.SESSION_COOKIE))
+    # Namespace the upload under the signed-in user, so a person's images all
+    # live under one prefix (uploads/<user_id>/...) and can be authorized by it.
     key = storage.upload_image(data, file.content_type, user_id=user_id)
     return {"image_key": key}

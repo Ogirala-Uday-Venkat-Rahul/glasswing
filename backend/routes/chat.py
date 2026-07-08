@@ -121,10 +121,18 @@ async def chat(request: ChatRequest, http_request: Request):
         # configured.
         images = None
         if request.image_key and storage.is_enabled():
-            try:
-                images = [storage.view_url(request.image_key)]
-            except Exception as exc:  # noqa: BLE001 - a bad key shouldn't sink the chat
-                print(f"[chat] could not presign image, continuing without it: {exc}")
+            # Only presign a key this user owns. Keys are namespaced
+            # uploads/<user_id>/<uuid>, so requiring that prefix stops a client
+            # from handing us someone else's key to read their private image
+            # (the random uuid already makes keys unguessable; this is the
+            # server-side check that doesn't rely on that).
+            if user_id is not None and request.image_key.startswith(f"uploads/{user_id}/"):
+                try:
+                    images = [storage.view_url(request.image_key)]
+                except Exception as exc:  # noqa: BLE001 - a bad key shouldn't sink the chat
+                    print(f"[chat] could not presign image, continuing without it: {exc}")
+            else:
+                print("[chat] rejected image_key not owned by requester")
 
         # Did this conversation show an image earlier that ISN'T attached now (the
         # user removed it)? If so the model can no longer see it, so we flag that

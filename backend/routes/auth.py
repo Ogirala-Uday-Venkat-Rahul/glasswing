@@ -14,9 +14,12 @@ both /auth/login and /auth/callback 503 if either is missing. /auth/me and
 Cookie flags worth knowing (set the same way everywhere):
   * httponly=True  -- JavaScript cannot read the cookie, so an XSS bug can't
                       steal the session. Only the server ever sees it.
-  * samesite="lax" -- the cookie still rides along on the top-level redirect back
-                      from Google (a GET navigation), but not on random
-                      cross-site POSTs. The right balance for a login cookie.
+  * samesite       -- In production the frontend (Vercel) and backend (Cloud Run)
+                      are different sites, so the browser only sends the session
+                      cookie on the app's fetch/SSE calls if it is SameSite=None.
+                      That in turn requires Secure. On http://localhost we can't
+                      be Secure, so there we fall back to "lax" (still enough for
+                      same-origin dev). So samesite and secure move together.
   * secure         -- HTTPS-only. True in production; on http://localhost it must
                       be False or the browser silently drops the cookie. We infer
                       it from whether our redirect URI is https.
@@ -38,6 +41,14 @@ def _secure_cookies() -> bool:
     return auth._cfg()["redirect_uri"].startswith("https://")
 
 
+def _samesite() -> str:
+    # Cross-site in production (Vercel frontend -> Cloud Run backend), so the
+    # cookie must be SameSite=None to ride along on the app's fetch/SSE calls.
+    # None is only valid alongside Secure, so we key it off the same https signal:
+    # https deploy -> "none", http localhost -> "lax".
+    return "none" if _secure_cookies() else "lax"
+
+
 @router.get("/login")
 def login():
     """Step 1: bounce the browser to Google, remembering a CSRF state nonce."""
@@ -53,7 +64,7 @@ def login():
         auth.sign_state(state),
         max_age=auth.STATE_MAX_AGE,
         httponly=True,
-        samesite="lax",
+        samesite=_samesite(),
         secure=_secure_cookies(),
         path="/",
     )
@@ -85,8 +96,13 @@ def callback(request: Request, code: str | None = None, state: str | None = None
         print(f"[auth] token exchange failed: {exc}")
         return RedirectResponse(f"{auth.frontend_url()}/?auth=error", status_code=302)
 
+    # Key the account on the email, but only if Google says it's verified. An
+    # unverified email must never map to a user row: otherwise someone could sign
+    # up to an identity provider with an address they don't own, get it echoed
+    # here unverified, and land on another person's account. Google returns this
+    # as a bool; some providers send the string "true", so accept both.
     email = profile.get("email")
-    if not email:
+    if not email or profile.get("email_verified") not in (True, "true"):
         return RedirectResponse(f"{auth.frontend_url()}/?auth=error", status_code=302)
 
     # Upsert the user and mint the session.
@@ -106,7 +122,7 @@ def callback(request: Request, code: str | None = None, state: str | None = None
         auth.sign_session(user_id),
         max_age=auth.SESSION_MAX_AGE,
         httponly=True,
-        samesite="lax",
+        samesite=_samesite(),
         secure=_secure_cookies(),
         path="/",
     )
