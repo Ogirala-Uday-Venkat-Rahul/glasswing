@@ -19,8 +19,14 @@ agent's decision process is hidden.
 - Streams each step to the frontend over SSE, rendered as a live timeline.
 - Remembers the conversation. Each turn is saved to Postgres and replayed on the next
   question, so follow-ups work; a stored chat can be reloaded by its id.
-- Accepts image input. You can ask questions about an uploaded picture.
-- Signs you in with Google and keeps per-user conversation history.
+- Accepts image input. Ask about an uploaded picture, and it stays attached across
+  follow-up questions so you can keep asking. An answer read from the image is marked
+  as such, and once you remove the image the agent says it can no longer see it rather
+  than guessing at details it no longer has.
+- Has an optional headlines panel. Turn it on and it pulls current news (Google News
+  via Serper); click any headline to ask the agent about it.
+- Signs you in with Google and keeps per-user conversation history, listed in a sidebar.
+  Any chat can be deleted, which also removes its stored images.
 
 ## Architecture
 
@@ -109,7 +115,9 @@ backend/
   deps.py        current_user dependency
   routes/
     chat.py      SSE endpoint
-    history.py   read a stored conversation
+    history.py   read and delete stored conversations
+    upload.py    image upload to object storage
+    news.py      current headlines (optional)
   db.py          Neon engine and session factory (optional seam)
   models.py      User / Conversation / Message
   store.py       conversation history queries
@@ -124,6 +132,8 @@ frontend/
       Sidebar.jsx    recents list and new chat
       Chat.jsx       the message pane and composer
       StepTimeline.jsx  the live step timeline and final answer
+      NewsPanel.jsx  optional headlines feed
+      Mote.jsx       the mascot that reacts to the agent's state
       Markdown.jsx   small hand-rolled Markdown renderer for answers
 tests/
 ```
