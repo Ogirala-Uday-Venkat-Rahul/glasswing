@@ -4,6 +4,13 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Glasswing</title>
+    <!-- Apply the saved theme before first paint so there's no light/dark flash. -->
+    <script>
+      document.documentElement.setAttribute(
+        "data-theme",
+        localStorage.getItem("gw-theme") || "dark"
+      );
+    </script>
   </head>
   <body>
     <div id="root"></div>

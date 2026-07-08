@@ -27,7 +27,7 @@ function toExchanges(messages) {
   return out;
 }
 
-export default function Workspace() {
+export default function Workspace({ onAgentState }) {
   const [conversations, setConversations] = useState([]);
   const [activeId, setActiveId] = useState(null); // null = a fresh, unsaved chat
   const [exchanges, setExchanges] = useState([]);
@@ -55,8 +55,15 @@ export default function Workspace() {
     setConversations(await listConversations());
   }
 
+  // Tell the header mascot the agent just finished: a brief "done" pop, then calm.
+  function settleAgent() {
+    onAgentState?.("done");
+    setTimeout(() => onAgentState?.("idle"), 1400);
+  }
+
   async function ask(question, imageFile) {
     setBusy(true);
+    onAgentState?.("working");
     const index = exchanges.length; // where this turn's exchange will live
     const wasNew = activeId === null;
     // A fresh preview URL owned by this exchange (the composer's own preview is
@@ -78,6 +85,7 @@ export default function Workspace() {
           return next;
         });
         setBusy(false);
+        onAgentState?.("idle");
         return;
       }
     }
@@ -112,6 +120,7 @@ export default function Workspace() {
       });
     } finally {
       setBusy(false);
+      settleAgent();
       // A brand-new chat now exists in the database -- pull it into the sidebar.
       if (wasNew) refreshConversations();
     }
