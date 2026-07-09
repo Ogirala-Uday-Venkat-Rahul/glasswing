@@ -159,9 +159,20 @@ body {
 /* --- Workspace: recents sidebar + chat pane --- */
 .workspace {
   display: grid;
-  grid-template-columns: 232px 1fr;
+  /* minmax(0, 1fr), not plain 1fr: a 1fr track's minimum is min-content, so a
+     wide child (the horizontal recents strip, a long tool result) would inflate
+     the column past the viewport instead of scrolling inside it. Pinning the
+     minimum to 0 keeps the column at the available width. */
+  grid-template-columns: 232px minmax(0, 1fr);
   gap: 24px;
   align-items: start;
+}
+
+/* Let both grid children shrink below their content width so their own scroll
+   containers (the recents strip, a tool-result box) handle the overflow, rather
+   than pushing the whole layout wider than the screen. */
+.workspace > * {
+  min-width: 0;
 }
 
 .sidebar {
@@ -342,7 +353,7 @@ body {
 
 @media (max-width: 720px) {
   .workspace {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
   .sidebar {
     position: static;
