@@ -70,11 +70,6 @@ body {
   max-width: 1040px;
   margin: 0 auto;
   padding: 26px 20px 40px;
-  /* Safety net: on a phone, nothing inside should be able to force the page to
-     scroll sideways. clip (not hidden) doesn't create a scroll container, so the
-     sticky composer keeps working. The real fixes below wrap wide content; this
-     just guarantees the page never slips past the viewport edge. */
-  overflow-x: clip;
 }
 
 /* --- Header: brand (mascot + wordmark) left, theme toggle right --- */
