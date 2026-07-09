@@ -70,6 +70,11 @@ body {
   max-width: 1040px;
   margin: 0 auto;
   padding: 26px 20px 40px;
+  /* Safety net: on a phone, nothing inside should be able to force the page to
+     scroll sideways. clip (not hidden) doesn't create a scroll container, so the
+     sticky composer keeps working. The real fixes below wrap wide content; this
+     just guarantees the page never slips past the viewport edge. */
+  overflow-x: clip;
 }
 
 /* --- Header: brand (mascot + wordmark) left, theme toggle right --- */
@@ -436,12 +441,14 @@ body {
   gap: 10px;
   margin-bottom: 16px;
   font-size: 13px;
+  min-width: 0;
 }
 
 .avatar {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  flex: 0 0 auto;
   width: 27px;
   height: 27px;
   border-radius: 50%;
@@ -455,9 +462,16 @@ body {
 
 .userbar-email {
   color: var(--muted);
+  /* A long address shouldn't shove the Sign out button off a narrow screen --
+     let it shrink and trail off with an ellipsis instead. */
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .signout {
+  flex: 0 0 auto;
   padding: 5px 12px;
   border-radius: 9px;
   border: 1px solid var(--border-2);
@@ -548,7 +562,9 @@ body {
 
 .exchange-image {
   display: block;
-  max-width: 320px;
+  /* Cap at 320px on desktop but never exceed the container on a narrow phone,
+     or the image would push the whole card past the screen edge. */
+  max-width: min(320px, 100%);
   max-height: 320px;
   width: auto;
   height: auto;
@@ -637,6 +653,7 @@ body {
 .step-args,
 .step-result-text {
   display: inline-block;
+  max-width: 100%;
   margin-left: 6px;
   padding: 1px 6px;
   border-radius: 6px;
@@ -644,6 +661,9 @@ body {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 12.5px;
   white-space: pre-wrap;
+  /* A long URL (from a fetch/search) has no spaces, so pre-wrap alone can't
+     break it -- without this it would run off the right edge on mobile. */
+  overflow-wrap: anywhere;
 }
 
 .step-result {
