@@ -6,6 +6,11 @@ each tool call, each result, and the final answer. The name comes from the glass
 butterfly, whose wings are transparent. The idea here is the same: nothing about the
 agent's decision process is hidden.
 
+**Live demo:** https://glasswing-sigma.vercel.app — sign in with Google to try it.
+
+> The backend runs on a free tier that sleeps when idle, so the first request after a
+> quiet spell takes about a minute to wake up. After that it's responsive.
+
 ## What it does
 
 - Runs a hand-rolled tool-calling loop over a Groq model. The model decides when to
