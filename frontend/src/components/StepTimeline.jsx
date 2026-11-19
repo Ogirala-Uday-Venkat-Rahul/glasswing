@@ -49,7 +49,13 @@ function StepRow({ step }) {
   if (step.type === "thinking") {
     return (
       <div className="step step-thinking">
-        <span className="step-tag">thinking</span>
+        <span className="step-tag">
+          <svg className="step-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M12 2a8 8 0 0 0-8 8c0 3 2 5.5 4 7v3h8v-3c2-1.5 4-4 4-7a8 8 0 0 0-8-8z" />
+            <line x1="10" y1="22" x2="14" y2="22" />
+          </svg>
+          thinking
+        </span>
         <span className="step-body"><Markdown text={step.content} /></span>
       </div>
     );
@@ -59,7 +65,12 @@ function StepRow({ step }) {
     const args = step.args ? JSON.stringify(step.args) : "";
     return (
       <div className="step step-call">
-        <span className="step-tag">using tool</span>
+        <span className="step-tag">
+          <svg className="step-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+          </svg>
+          using tool
+        </span>
         <span className="step-body">
           <strong>{toolName(step.tool)}</strong>
           {args && <code className="step-args">{args}</code>}
@@ -69,12 +80,45 @@ function StepRow({ step }) {
   }
 
   if (step.type === "tool_result") {
+    // Extract web domains for clean source badges if it's search or fetch
+    const rawUrls = (step.content || "").match(/https?:\/\/[^\s\)\"\'\<\>]+/g) || [];
+    const uniqueDomains = Array.from(new Set(rawUrls.map(u => {
+      try { return { domain: new URL(u).hostname.replace(/^www\./, ""), url: u }; } catch { return null; }
+    }))).filter(Boolean);
+
     return (
       <div className="step step-result">
-        <span className="step-tag">result</span>
+        <span className="step-tag">
+          <svg className="step-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+          result
+        </span>
         <span className="step-body">
           <span className="step-result-from">{toolName(step.tool)} returned</span>
           <code className="step-result-text">{step.content}</code>
+          {uniqueDomains.length > 0 && (
+            <div className="source-badges">
+              {uniqueDomains.slice(0, 4).map(({ domain, url }) => (
+                <a
+                  key={url}
+                  href={url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="source-badge"
+                  title={url}
+                >
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="2" y1="12" x2="22" y2="12" />
+                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+                  </svg>
+                  <span>{domain}</span>
+                  <span className="source-arrow">↗</span>
+                </a>
+              ))}
+            </div>
+          )}
         </span>
       </div>
     );
@@ -83,7 +127,14 @@ function StepRow({ step }) {
   if (step.type === "error") {
     return (
       <div className="step step-error">
-        <span className="step-tag">error</span>
+        <span className="step-tag">
+          <svg className="step-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="8" x2="12" y2="12" />
+            <line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
+          error
+        </span>
         <span className="step-body">{step.content}</span>
       </div>
     );
@@ -95,21 +146,47 @@ function StepRow({ step }) {
 export default function StepTimeline({ steps, fromImage = false }) {
   const trail = steps.filter((s) => s.type !== "final_answer");
   const answer = steps.find((s) => s.type === "final_answer");
+  // Expand reasoning by default while running; allow toggling when finished
+  const [trailOpen, setTrailOpen] = useState(true);
+
+  // Tools used summary
+  const toolNames = Array.from(new Set(trail.filter(s => s.tool).map(s => toolName(s.tool))));
 
   return (
     <div className="timeline">
-      {trail.map((step, i) => (
+      {trail.length > 0 && answer && (
+        <button
+          type="button"
+          className="trail-toggle"
+          onClick={() => setTrailOpen(!trailOpen)}
+          title="Toggle reasoning steps"
+        >
+          <span className="trail-toggle-left">
+            <span className={`trail-arrow ${trailOpen ? "open" : ""}`}>›</span>
+            <span>Reasoning trace · {trail.length} {trail.length === 1 ? "step" : "steps"}</span>
+            {toolNames.length > 0 && (
+              <span className="trail-tools">({toolNames.join(", ")})</span>
+            )}
+          </span>
+          <span className="trail-toggle-action">{trailOpen ? "Collapse" : "Expand"}</span>
+        </button>
+      )}
+
+      {(trailOpen || !answer) && trail.map((step, i) => (
         <StepRow key={i} step={step} />
       ))}
+
       {answer && (
         <div className="answer">
           <div className="answer-head">
             <span className="answer-head-left">
-              <span className="answer-tag">answer</span>
-              {/* Grounded-honesty badge: this turn had an image attached, so the
-                  answer was read from the picture. Its absence on a later turn is
-                  the visible signal that the image was detached -- the app being
-                  transparent about where an answer came from. */}
+              <span className="answer-tag">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                </svg>
+                answer
+              </span>
+              {/* Grounded-honesty badge */}
               {fromImage && (
                 <span className="answer-source" title="This answer was read from the image you attached">
                   <ImageGlyph />

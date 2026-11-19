@@ -11,9 +11,18 @@ import StepTimeline from "./StepTimeline.jsx";
 // tool, so a first-time visitor sees the agent reach for the right one: unit
 // conversion + arithmetic, a live web search, and the clock.
 const EXAMPLES = [
-  "How many miles is a 42.195 km marathon, and at a 10-min/mile pace how long would it take?",
-  "What was SpaceX's most recent launch?",
-  "What's the date and time right now?",
+  {
+    tag: "Convert + Calculator",
+    prompt: "How many miles is a 42.195 km marathon, and at a 10-min/mile pace how long would it take?",
+  },
+  {
+    tag: "Live Google Search",
+    prompt: "What was SpaceX's most recent launch?",
+  },
+  {
+    tag: "Real-time Clock",
+    prompt: "What's the date and time right now?",
+  },
 ];
 
 export default function Chat({
@@ -117,13 +126,14 @@ export default function Chat({
             <div className="examples">
               {EXAMPLES.map((ex) => (
                 <button
-                  key={ex}
+                  key={ex.prompt}
                   type="button"
                   className="example"
-                  onClick={() => onExample(ex)}
+                  onClick={() => onExample(ex.prompt)}
                   disabled={busy}
                 >
-                  {ex}
+                  <span className="example-tag">{ex.tag}</span>
+                  <span className="example-text">{ex.prompt}</span>
                 </button>
               ))}
             </div>
@@ -131,7 +141,10 @@ export default function Chat({
         )}
         {exchanges.map((ex, i) => (
           <div key={i} className="exchange">
-            <div className="question">{ex.question}</div>
+            <div className="question-row">
+              <span className="user-badge" aria-hidden="true">You</span>
+              <div className="question">{ex.question}</div>
+            </div>
             {ex.image && (
               <img className="exchange-image" src={ex.image} alt="Attached by the user" />
             )}
