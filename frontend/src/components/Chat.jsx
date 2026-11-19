@@ -120,8 +120,9 @@ export default function Chat({
       <div className="exchanges">
         {exchanges.length === 0 && (
           <div className="empty">
+            <h2 className="empty-title">What would you like to explore?</h2>
             <p className="empty-lead">
-              Ask a question and watch the agent think, use its tools, and answer.
+              Ask any question to watch Glasswing think, verify sources, and execute tools in real time.
             </p>
             <div className="examples">
               {EXAMPLES.map((ex) => (
@@ -143,8 +144,7 @@ export default function Chat({
           <div key={i} className="exchange">
             <div className="user-turn">
               <div className="user-bubble">
-                <span className="user-badge" aria-hidden="true">You</span>
-                <span className="user-text">{ex.question}</span>
+                {ex.question}
               </div>
             </div>
             {ex.image && (
