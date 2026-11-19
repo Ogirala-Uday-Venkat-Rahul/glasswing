@@ -1,0 +1,23 @@
+name: Render Backend Keep-Alive
+
+on:
+  schedule:
+    # Runs every 14 minutes to prevent Render free-tier spin down (sleeps after 15m idle)
+    - cron: "*/14 * * * *"
+  workflow_dispatch: # Allows manual trigger from GitHub UI
+
+jobs:
+  ping:
+    name: Ping Health Endpoint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Backend Health
+        run: |
+          echo "Pinging Glasswing Render Backend to keep warm..."
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 30 https://glasswing-74yw.onrender.com/health || echo "FAILED")
+          echo "HTTP Response Status: $STATUS"
+          if [ "$STATUS" = "200" ]; then
+            echo "Backend is awake and healthy."
+          else
+            echo "Backend returned status $STATUS (or is waking up)."
+          fi
