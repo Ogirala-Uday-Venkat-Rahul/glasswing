@@ -127,6 +127,16 @@ export default function App() {
           >
             {theme === "dark" ? "☀" : "☾"}
           </button>
+          {me?.authenticated && (
+            <div className="header-user">
+              <span className="avatar" title={me.user.email} aria-hidden="true">
+                {me.user.email[0].toUpperCase()}
+              </span>
+              <button className="signout" onClick={signOut} title="Sign out">
+                Sign out
+              </button>
+            </div>
+          )}
         </div>
       </header>
 
@@ -140,18 +150,7 @@ export default function App() {
           </span>
         </div>
       ) : me.authenticated ? (
-        <>
-          <div className="userbar">
-            <span className="avatar" aria-hidden="true">
-              {me.user.email[0].toUpperCase()}
-            </span>
-            <span className="userbar-email">{me.user.email}</span>
-            <button className="signout" onClick={signOut}>
-              Sign out
-            </button>
-          </div>
-          <Workspace onAgentState={setAgentState} />
-        </>
+        <Workspace onAgentState={setAgentState} />
       ) : (
         <Login notice={notice} />
       )}

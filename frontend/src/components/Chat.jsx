@@ -141,9 +141,11 @@ export default function Chat({
         )}
         {exchanges.map((ex, i) => (
           <div key={i} className="exchange">
-            <div className="question-row">
-              <span className="user-badge" aria-hidden="true">You</span>
-              <div className="question">{ex.question}</div>
+            <div className="user-turn">
+              <div className="user-bubble">
+                <span className="user-badge" aria-hidden="true">You</span>
+                <span className="user-text">{ex.question}</span>
+              </div>
             </div>
             {ex.image && (
               <img className="exchange-image" src={ex.image} alt="Attached by the user" />
@@ -166,60 +168,77 @@ export default function Chat({
       </div>
 
       <form className="composer" onSubmit={onSubmit}>
-        {attachedImage ? (
-          <div
-            className="attach-preview"
-            title="This image stays attached to your messages. Click × to remove it."
-          >
-            <img src={attachedImage} alt="Attachment preview" />
+        <div className="composer-bar">
+          {attachedImage ? (
+            <div
+              className="attach-preview"
+              title="Attached image. Click × to remove."
+            >
+              <img src={attachedImage} alt="Attachment preview" />
+              <button
+                type="button"
+                className="attach-remove"
+                onClick={onClearImage}
+                aria-label="Remove attached image"
+              >
+                ×
+              </button>
+            </div>
+          ) : (
+            <label className="attach-btn" title="Attach an image">
+              <input
+                type="file"
+                accept="image/*"
+                hidden
+                disabled={busy}
+                onChange={(e) => {
+                  onPickImage(e.target.files[0]);
+                  e.target.value = ""; // let the same file be re-picked later
+                }}
+              />
+              <ImageIcon />
+            </label>
+          )}
+          <input
+            type="text"
+            className="composer-input"
+            value={input}
+            placeholder={busy ? "Agent is working… click Stop to halt" : "Ask anything or attach a picture…"}
+            onChange={(e) => onInputChange(e.target.value)}
+            disabled={busy}
+          />
+          {busy ? (
             <button
               type="button"
-              className="attach-remove"
-              onClick={onClearImage}
-              aria-label="Remove attached image"
+              className="composer-btn stop"
+              onClick={onStop}
+              title="Stop agent execution"
             >
-              ×
+              <span className="stop-sq" />
+              <span>Stop</span>
             </button>
-          </div>
-        ) : (
-          <label className="attach-btn" title="Attach an image">
-            <input
-              type="file"
-              accept="image/*"
-              hidden
-              disabled={busy}
-              onChange={(e) => {
-                onPickImage(e.target.files[0]);
-                e.target.value = ""; // let the same file be re-picked later
-              }}
-            />
-            <ImageIcon />
-          </label>
-        )}
-        <input
-          type="text"
-          value={input}
-          placeholder={busy ? "Agent is working… click Stop to halt" : "Ask anything…"}
-          onChange={(e) => onInputChange(e.target.value)}
-          disabled={busy}
-        />
-        {busy ? (
-          <button
-            type="button"
-            className="stop-btn"
-            onClick={onStop}
-            title="Stop agent execution"
-          >
-            <span className="stop-sq" />
-            Stop
-          </button>
-        ) : (
-          <button type="submit" disabled={!input.trim() && !attachedImage}>
-            Ask
-          </button>
-        )}
+          ) : (
+            <button
+              type="submit"
+              className="composer-btn send"
+              disabled={!input.trim() && !attachedImage}
+              title="Send message"
+            >
+              <SendIcon />
+            </button>
+          )}
+        </div>
       </form>
     </div>
+  );
+}
+
+function SendIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <line x1="12" y1="19" x2="12" y2="5" />
+      <polyline points="5 12 12 5 19 12" />
+    </svg>
   );
 }
 
