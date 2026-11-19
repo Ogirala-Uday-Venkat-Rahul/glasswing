@@ -22,9 +22,6 @@ function toolName(name) {
 }
 
 // Copies the answer text to the clipboard, with a brief "Copied" confirmation.
-// A staple of any chat tool -- people want the answer, not to reselect it. The
-// clipboard API can be blocked (permissions, insecure origin); we just swallow
-// that rather than surface an error for a convenience action.
 function CopyButton({ text }) {
   const [copied, setCopied] = useState(false);
 
@@ -39,8 +36,23 @@ function CopyButton({ text }) {
   }
 
   return (
-    <button type="button" className="copy-btn" onClick={copy} title="Copy answer">
-      {copied ? "Copied" : "Copy"}
+    <button type="button" className="copy-btn" onClick={copy} title="Copy response">
+      {copied ? (
+        <>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+          <span>Copied</span>
+        </>
+      ) : (
+        <>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+          </svg>
+          <span>Copy</span>
+        </>
+      )}
     </button>
   );
 }
@@ -178,25 +190,18 @@ export default function StepTimeline({ steps, fromImage = false }) {
 
       {answer && (
         <div className="answer">
-          <div className="answer-head">
-            <span className="answer-head-left">
-              <span className="answer-tag">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                </svg>
-                answer
+          <div className="answer-body">
+            <Markdown text={answer.content} />
+          </div>
+          <div className="answer-actions">
+            {fromImage && (
+              <span className="answer-source" title="This answer was read from the image you attached">
+                <ImageGlyph />
+                Read from your image
               </span>
-              {/* Grounded-honesty badge */}
-              {fromImage && (
-                <span className="answer-source" title="This answer was read from the image you attached">
-                  <ImageGlyph />
-                  Read from your image
-                </span>
-              )}
-            </span>
+            )}
             <CopyButton text={answer.content} />
           </div>
-          <div className="answer-body"><Markdown text={answer.content} /></div>
         </div>
       )}
     </div>

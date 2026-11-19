@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Workspace from "./components/Workspace.jsx";
 import Login from "./components/Login.jsx";
 import Mote from "./components/Mote.jsx";
@@ -128,14 +128,7 @@ export default function App() {
             {theme === "dark" ? "☀" : "☾"}
           </button>
           {me?.authenticated && (
-            <div className="header-user">
-              <span className="avatar" title={me.user.email} aria-hidden="true">
-                {me.user.email[0].toUpperCase()}
-              </span>
-              <button className="signout" onClick={signOut} title="Sign out">
-                Sign out
-              </button>
-            </div>
+            <UserMenu user={me.user} onSignOut={signOut} />
           )}
         </div>
       </header>
@@ -153,6 +146,86 @@ export default function App() {
         <Workspace onAgentState={setAgentState} />
       ) : (
         <Login notice={notice} />
+      )}
+    </div>
+  );
+}
+
+function UserMenu({ user, onSignOut }) {
+  const [open, setOpen] = useState(false);
+  const menuRef = useRef(null);
+
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setOpen(false);
+      }
+    }
+    function handleKeyDown(e) {
+      if (e.key === "Escape") setOpen(false);
+    }
+    if (open) {
+      document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener("keydown", handleKeyDown);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [open]);
+
+  return (
+    <div className="user-menu-wrap" ref={menuRef}>
+      <button
+        type="button"
+        className={`user-trigger ${open ? "open" : ""}`}
+        onClick={() => setOpen((prev) => !prev)}
+        aria-label="User account menu"
+        aria-expanded={open}
+      >
+        <span className="avatar" aria-hidden="true">
+          {user.email[0].toUpperCase()}
+        </span>
+        <span className="user-trigger-email">{user.email}</span>
+        <svg
+          className={`user-trigger-chevron ${open ? "open" : ""}`}
+          width="12"
+          height="12"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.5"
+        >
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
+      </button>
+
+      {open && (
+        <div className="user-dropdown">
+          <div className="user-dropdown-header">
+            <span className="user-dropdown-avatar">{user.email[0].toUpperCase()}</span>
+            <div className="user-dropdown-info">
+              <span className="user-dropdown-label">Signed in as</span>
+              <span className="user-dropdown-email" title={user.email}>{user.email}</span>
+            </div>
+          </div>
+          <div className="user-dropdown-divider" />
+          <button
+            type="button"
+            className="user-dropdown-signout"
+            onClick={() => {
+              setOpen(false);
+              onSignOut();
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" y1="12" x2="9" y2="12" />
+            </svg>
+            Sign out
+          </button>
+        </div>
       )}
     </div>
   );

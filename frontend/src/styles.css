@@ -109,12 +109,30 @@ body {
   gap: 10px;
 }
 
-.header-user {
+/* User Menu & Dropdown */
+.user-menu-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.user-trigger {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding-left: 8px;
-  border-left: 1px solid var(--border-2);
+  padding: 3px 10px 3px 3px;
+  border-radius: 9999px;
+  background: var(--panel);
+  border: 1px solid var(--border-2);
+  color: var(--text);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.user-trigger:hover,
+.user-trigger.open {
+  border-color: var(--accent);
+  background: var(--panel-top);
 }
 
 .avatar {
@@ -129,27 +147,131 @@ body {
   border: 1px solid var(--border-2);
   box-shadow: inset 0 1px 0 var(--sheen);
   color: var(--accent-ink);
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 700;
   font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
-.signout {
-  flex: 0 0 auto;
-  padding: 4px 10px;
-  border-radius: 8px;
-  border: 1px solid var(--border-2);
-  background: var(--panel);
+.user-trigger-email {
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.user-trigger-chevron {
   color: var(--muted);
-  font-size: 12px;
+  transition: transform 0.15s ease;
+  flex: 0 0 auto;
+}
+
+.user-trigger-chevron.open {
+  transform: rotate(180deg);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.user-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 230px;
+  max-width: 320px;
+  background: var(--panel);
+  border: 1px solid var(--border-2);
+  border-radius: 14px;
+  padding: 12px;
+  box-shadow: 0 14px 35px rgba(0, 0, 0, 0.45);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  animation: fadeIn 0.12s ease-out;
+}
+
+.user-dropdown-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 2px 4px;
+}
+
+.user-dropdown-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, var(--panel-top), var(--panel-bot));
+  border: 1px solid var(--border-2);
+  color: var(--accent-ink);
+  font-size: 13px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  flex-shrink: 0;
+}
+
+.user-dropdown-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.user-dropdown-label {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+}
+
+.user-dropdown-email {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.user-dropdown-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 2px 0;
+}
+
+.user-dropdown-signout {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
-.signout:hover {
-  color: var(--text);
-  border-color: var(--accent);
+.user-dropdown-signout:hover {
+  color: var(--error);
+  background: rgba(207, 61, 67, 0.1);
+  border-color: rgba(207, 61, 67, 0.2);
+}
+
+@media (max-width: 600px) {
+  .user-trigger-email {
+    display: none;
+  }
 }
 
 .status-pill {
@@ -891,7 +1013,7 @@ body {
   color: var(--error);
 }
 
-/* The Answer: NO BOX! Clean, authoritative prose directly on the canvas */
+/* The Answer: Clean, authoritative prose directly on the canvas */
 .answer {
   margin-top: 18px;
   padding: 0;
@@ -900,32 +1022,33 @@ body {
   border: none;
 }
 
-.answer-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+.answer-body {
+  font-size: 15.5px;
+  line-height: 1.72;
+  color: var(--text);
+  letter-spacing: -0.005em;
+  word-break: break-word;
 }
 
-.answer-head-left {
+.answer-actions {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 10px;
-  min-width: 0;
+  margin-top: 14px;
 }
 
-/* "Read from your image" badge: marks an answer that was grounded in an attached
-   picture. Its presence/absence is the app being honest about the answer's source. */
+/* "Read from your image" badge: marks an answer that was grounded in an attached picture */
 .answer-source {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 2px 8px;
+  padding: 3px 9px;
   border-radius: 999px;
   border: 1px solid var(--border-2);
   background: var(--answer-bg);
   color: var(--accent-ink);
-  font-size: 11px;
+  font-size: 11.5px;
   font-weight: 600;
   letter-spacing: 0.01em;
   white-space: nowrap;
@@ -935,36 +1058,25 @@ body {
   flex: 0 0 auto;
 }
 
-.answer-tag {
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  font-weight: 700;
-  color: var(--accent-ink);
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-}
-
 .copy-btn {
-  padding: 3px 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
   border-radius: 8px;
   border: 1px solid var(--border-2);
   background: transparent;
   color: var(--muted);
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 500;
   cursor: pointer;
-  transition: color 0.15s, border-color 0.15s;
+  transition: all 0.15s ease;
 }
 
 .copy-btn:hover {
-  color: var(--accent-ink);
+  color: var(--text);
+  background: var(--sheen);
   border-color: var(--accent);
-}
-
-.answer-body {
-  margin-top: 6px;
-  font-size: 15px;
-  line-height: 1.6;
 }
 
 /* --- Rendered Markdown (answers and thinking) --- */
@@ -976,33 +1088,37 @@ body {
 }
 
 .md-p {
-  margin: 0 0 10px;
+  margin: 0 0 14px;
 }
 
 .md-h {
-  margin: 14px 0 6px;
-  font-size: 15px;
-  font-weight: 700;
-  letter-spacing: -0.01em;
+  margin: 22px 0 10px;
+  font-size: 17.5px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  line-height: 1.4;
+  color: var(--text);
 }
 
 .md-list {
-  margin: 0 0 10px;
+  margin: 0 0 14px;
   padding-left: 22px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
 }
 
 .md-list li {
   padding-left: 2px;
+  line-height: 1.65;
 }
 
 .md-code {
-  padding: 1px 5px;
+  padding: 2px 6px;
   border-radius: 5px;
   background: var(--code-bg);
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  border: 1px solid var(--border);
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 0.88em;
 }
 
