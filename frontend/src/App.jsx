@@ -58,6 +58,51 @@ export default function App() {
     return () => { active = false; };
   }, []);
 
+  // PWA install prompt handler
+  const [installPrompt, setInstallPrompt] = useState(null);
+  const [isInstalled, setIsInstalled] = useState(false);
+
+  useEffect(() => {
+    if (window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone) {
+      setIsInstalled(true);
+      return;
+    }
+
+    function onBeforeInstallPrompt(e) {
+      e.preventDefault();
+      setInstallPrompt(e);
+    }
+    function onAppInstalled() {
+      setIsInstalled(true);
+      setInstallPrompt(null);
+    }
+
+    window.addEventListener("beforeinstallprompt", onBeforeInstallPrompt);
+    window.addEventListener("appinstalled", onAppInstalled);
+    return () => {
+      window.removeEventListener("beforeinstallprompt", onBeforeInstallPrompt);
+      window.removeEventListener("appinstalled", onAppInstalled);
+    };
+  }, []);
+
+  async function handleInstallApp() {
+    if (installPrompt) {
+      installPrompt.prompt();
+      const { outcome } = await installPrompt.userChoice;
+      if (outcome === "accepted") {
+        setInstallPrompt(null);
+        setIsInstalled(true);
+      }
+    } else {
+      // Friendly fallback instructions for iOS Safari or browsers without beforeinstallprompt
+      alert(
+        "To install Glasswing as an app:\n\n" +
+        "• On Android / Desktop Chrome: Tap the browser menu (⋮) and select 'Install app' or 'Add to Home screen'.\n\n" +
+        "• On iPhone / iPad (Safari): Tap the Share button at the bottom (box with arrow) and tap 'Add to Home Screen'."
+      );
+    }
+  }
+
   // Ask who we are, and survive a cold/unreachable backend: retry with backoff
   // instead of hanging on the spinner forever.
   useEffect(() => {
@@ -118,6 +163,21 @@ export default function App() {
               <span className="status-dot" />
               <span>{backendOnline ? "Backend: Online" : "Backend: Waking (~50s)"}</span>
             </div>
+          )}
+          {!isInstalled && (
+            <button
+              type="button"
+              className="install-btn"
+              onClick={handleInstallApp}
+              title="Install Glasswing as an app"
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+              <span>Install</span>
+            </button>
           )}
           <button
             className="theme-toggle"

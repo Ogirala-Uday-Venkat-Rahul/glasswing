@@ -274,6 +274,26 @@ body {
   }
 }
 
+.install-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  border: 1px solid var(--accent);
+  background: var(--answer-bg);
+  color: var(--accent-ink);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.install-btn:hover {
+  background: var(--accent);
+  color: var(--send-ink);
+}
+
 .status-pill {
   display: inline-flex;
   align-items: center;
@@ -561,22 +581,133 @@ body {
   color: var(--muted);
 }
 
+/* Mobile elements hidden on desktop */
+.mobile-bar,
+.sidebar-drawer-head,
+.sidebar-backdrop {
+  display: none;
+}
+
 @media (max-width: 720px) {
   .workspace {
-    grid-template-columns: minmax(0, 1fr);
+    display: block;
   }
+
+  .mobile-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .mobile-bar-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 6px 14px;
+    border-radius: 9999px;
+    background: var(--panel);
+    border: 1px solid var(--border-2);
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .mobile-bar-btn:hover {
+    border-color: var(--accent);
+    background: var(--panel-top);
+  }
+
+  .mobile-bar-btn.new-chat {
+    border-color: var(--accent);
+    background: var(--answer-bg);
+    color: var(--accent-ink);
+    font-weight: 600;
+  }
+
+  /* Slide-out drawer on mobile */
+  .sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(2px);
+    z-index: 199;
+    animation: fadeIn 0.15s ease-out;
+  }
+
   .sidebar {
-    position: static;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: min(320px, 86vw);
+    background: var(--panel);
+    border-right: 1px solid var(--border-2);
+    box-shadow: 14px 0 40px rgba(0, 0, 0, 0.6);
+    z-index: 200;
+    padding: 20px 16px;
+    transform: translateX(-100%);
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    overflow-y: auto;
   }
+
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  .sidebar-drawer-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .sidebar-drawer-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .sidebar-close-btn {
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    padding: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    transition: all 0.12s ease;
+  }
+
+  .sidebar-close-btn:hover {
+    color: var(--text);
+    background: var(--sheen);
+  }
+
   .recents {
-    flex-direction: row;
-    overflow-x: auto;
-    max-height: none;
+    flex-direction: column;
+    overflow-x: visible;
+    overflow-y: auto;
+    max-height: 48vh;
+    gap: 4px;
   }
+
   .recent-row {
     flex: 0 0 auto;
-    max-width: 220px;
+    width: 100%;
+    max-width: none;
   }
+
   /* No hover on touch -- keep the delete control visible. */
   .recent-del {
     opacity: 1;

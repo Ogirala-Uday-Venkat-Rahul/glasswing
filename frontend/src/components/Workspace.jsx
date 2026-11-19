@@ -39,6 +39,7 @@ export default function Workspace({ onAgentState }) {
   const [exchanges, setExchanges] = useState([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const abortRef = useRef(null);
   // The active image attachment, or null. It stays attached across follow-up
   // turns (a "sticky" image), so you can keep asking about the same picture --
@@ -216,14 +217,66 @@ export default function Workspace({ onAgentState }) {
 
   return (
     <div className="workspace">
+      {/* Mobile top navigation bar */}
+      <div className="mobile-bar">
+        <button
+          type="button"
+          className="mobile-bar-btn"
+          onClick={() => setSidebarOpen(true)}
+          aria-label="Open chat history"
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+            <line x1="3" y1="12" x2="21" y2="12" />
+            <line x1="3" y1="6" x2="21" y2="6" />
+            <line x1="3" y1="18" x2="21" y2="18" />
+          </svg>
+          <span>Chats {conversations.length > 0 ? `(${conversations.length})` : ""}</span>
+        </button>
+
+        <button
+          type="button"
+          className="mobile-bar-btn new-chat"
+          onClick={() => {
+            newChat();
+            setSidebarOpen(false);
+          }}
+          disabled={busy}
+        >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+          <span>New chat</span>
+        </button>
+      </div>
+
+      {sidebarOpen && (
+        <div
+          className="sidebar-backdrop"
+          onClick={() => setSidebarOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
       <Sidebar
         conversations={conversations}
         activeId={activeId}
-        onSelect={selectConversation}
-        onNew={newChat}
+        onSelect={(id) => {
+          selectConversation(id);
+          setSidebarOpen(false);
+        }}
+        onNew={() => {
+          newChat();
+          setSidebarOpen(false);
+        }}
         onDelete={deleteConversation}
-        onAskHeadline={askExample}
+        onAskHeadline={(q) => {
+          askExample(q);
+          setSidebarOpen(false);
+        }}
         busy={busy}
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
       />
       <Chat
         exchanges={exchanges}
