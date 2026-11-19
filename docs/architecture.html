@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Glasswing — High Level Design Architecture</title>
+  <title>Glasswing — High Level Design (HLD) Architecture</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
@@ -11,14 +11,18 @@
   <style>
     :root {
       --bg: #0b0c10;
-      --panel: #14161c;
-      --panel-top: #191c24;
-      --border: rgba(255, 255, 255, 0.1);
-      --border-accent: rgba(240, 166, 61, 0.35);
+      --panel: #13151b;
+      --panel-top: #181b23;
+      --border: rgba(255, 255, 255, 0.09);
+      --border-accent: rgba(240, 166, 61, 0.4);
       --text: #f1f2f6;
-      --muted: #9aa0b2;
+      --muted: #8e94a5;
       --accent: #f0a63d;
       --accent-ink: #f6bc63;
+      --client-color: #38bdf8;
+      --api-color: #c084fc;
+      --data-color: #34d399;
+      --ext-color: #f43f5e;
     }
 
     * {
@@ -32,7 +36,8 @@
       color: var(--text);
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       min-height: 100vh;
-      padding: 24px 20px 80px;
+      padding: 30px 24px 80px;
+      line-height: 1.6;
     }
 
     .container {
@@ -40,14 +45,14 @@
       margin: 0 auto;
     }
 
-    /* Header */
+    /* Top Brand Header */
     header {
       display: flex;
       align-items: center;
       justify-content: space-between;
       border-bottom: 1px solid var(--border);
-      padding-bottom: 20px;
-      margin-bottom: 24px;
+      padding-bottom: 22px;
+      margin-bottom: 28px;
       flex-wrap: wrap;
       gap: 16px;
     }
@@ -59,77 +64,130 @@
     }
 
     .brand-icon {
-      width: 44px;
-      height: 44px;
+      width: 46px;
+      height: 46px;
       background: radial-gradient(circle, rgba(240, 166, 61, 0.25) 0%, transparent 70%), var(--panel);
       border: 1px solid var(--border-accent);
       border-radius: 12px;
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 4px 20px rgba(240, 166, 61, 0.15);
+      box-shadow: 0 4px 20px rgba(240, 166, 61, 0.18);
     }
 
-    .brand h1 {
+    .brand-text h1 {
       font-size: 24px;
       font-weight: 700;
       letter-spacing: -0.02em;
     }
 
-    .brand h1 span {
+    .brand-text h1 span {
       color: var(--accent);
     }
 
-    .brand p {
+    .brand-text p {
       font-size: 13px;
       color: var(--muted);
-      margin-top: 2px;
+      margin-top: 1px;
     }
 
-    .badge {
+    .meta-pills {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .pill {
       display: inline-flex;
       align-items: center;
       gap: 6px;
       padding: 5px 12px;
       border-radius: 9999px;
-      background: rgba(240, 166, 61, 0.1);
-      border: 1px solid var(--border-accent);
-      color: var(--accent-ink);
-      font-size: 12px;
+      font-size: 11.5px;
       font-weight: 600;
       font-family: 'JetBrains Mono', monospace;
+      letter-spacing: 0.02em;
     }
 
-    .badge-dot {
+    .pill-tier {
+      background: rgba(240, 166, 61, 0.12);
+      border: 1px solid var(--border-accent);
+      color: var(--accent-ink);
+    }
+
+    .pill-status {
+      background: rgba(52, 211, 153, 0.1);
+      border: 1px solid rgba(52, 211, 153, 0.3);
+      color: #34d399;
+    }
+
+    .status-dot {
       width: 7px;
       height: 7px;
       border-radius: 50%;
-      background: var(--accent);
-      box-shadow: 0 0 8px var(--accent);
+      background: #34d399;
+      box-shadow: 0 0 8px #34d399;
     }
 
-    /* Section Cards */
-    .section-card {
+    /* Navigation Tabs */
+    .tabs-bar {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 24px;
+      background: var(--panel);
+      padding: 5px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      width: fit-content;
+      flex-wrap: wrap;
+    }
+
+    .tab-btn {
+      padding: 8px 18px;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--muted);
+      font-size: 13.5px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .tab-btn:hover {
+      color: var(--text);
+    }
+
+    .tab-btn.active {
+      background: var(--panel-top);
+      color: var(--accent-ink);
+      border-color: var(--border-accent);
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+    }
+
+    /* Diagram Section Cards */
+    .doc-section {
       background: var(--panel);
       border: 1px solid var(--border);
       border-radius: 16px;
-      padding: 22px;
+      padding: 24px;
       margin-bottom: 28px;
       box-shadow: 0 16px 36px rgba(0, 0, 0, 0.4);
     }
 
-    .section-header {
+    .section-head {
       display: flex;
       align-items: center;
       justify-content: space-between;
       border-bottom: 1px solid var(--border);
-      padding-bottom: 14px;
-      margin-bottom: 16px;
+      padding-bottom: 16px;
+      margin-bottom: 18px;
       flex-wrap: wrap;
       gap: 12px;
     }
 
-    .section-title {
+    .section-head-left h2 {
       font-size: 18px;
       font-weight: 600;
       letter-spacing: -0.01em;
@@ -138,13 +196,12 @@
       gap: 10px;
     }
 
-    .section-desc {
+    .section-head-left p {
       font-size: 13px;
       color: var(--muted);
-      margin-top: 2px;
+      margin-top: 3px;
     }
 
-    /* Controls Toolbar on each diagram */
     .toolbar {
       display: flex;
       align-items: center;
@@ -152,7 +209,7 @@
       flex-wrap: wrap;
     }
 
-    .tool-btn {
+    .btn {
       display: inline-flex;
       align-items: center;
       gap: 6px;
@@ -168,30 +225,30 @@
       user-select: none;
     }
 
-    .tool-btn:hover {
+    .btn:hover {
       border-color: var(--accent);
       color: var(--accent-ink);
       background: rgba(240, 166, 61, 0.08);
     }
 
-    .tool-btn.primary {
+    .btn.primary {
       border-color: var(--accent);
       background: rgba(240, 166, 61, 0.14);
       color: var(--accent-ink);
       font-weight: 600;
     }
 
-    .tool-btn.primary:hover {
+    .btn.primary:hover {
       background: var(--accent);
       color: #120e06;
     }
 
-    /* Pan & Zoom Canvas Container */
+    /* Pan & Zoom Canvas Viewport */
     .viewport {
       position: relative;
       width: 100%;
-      height: 580px;
-      background: #090a0d;
+      height: 560px;
+      background: #08090c;
       border: 1px solid var(--border);
       border-radius: 12px;
       overflow: hidden;
@@ -202,7 +259,7 @@
       cursor: grabbing;
     }
 
-    .viewport-canvas {
+    .canvas {
       position: absolute;
       top: 0;
       left: 0;
@@ -216,27 +273,25 @@
       min-height: 100%;
     }
 
-    /* Ensure Mermaid text is never crushed */
-    .viewport-canvas .mermaid {
-      min-width: 1000px;
+    .canvas .mermaid {
+      min-width: 1100px;
       width: auto !important;
       display: flex;
       justify-content: center;
     }
 
-    .viewport-canvas svg {
+    .canvas svg {
       width: 100% !important;
       max-width: none !important;
       height: auto !important;
       font-family: 'Inter', sans-serif !important;
     }
 
-    /* Legend / Hint at bottom right */
-    .viewport-hint {
+    .canvas-hint {
       position: absolute;
       bottom: 12px;
       right: 14px;
-      background: rgba(14, 16, 22, 0.85);
+      background: rgba(14, 16, 22, 0.88);
       border: 1px solid var(--border);
       padding: 4px 10px;
       border-radius: 6px;
@@ -246,12 +301,75 @@
       backdrop-filter: blur(4px);
     }
 
-    /* Fullscreen Modal */
+    /* Senior Engineer ADR & Specs Grid */
+    .spec-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 18px;
+      margin-top: 24px;
+    }
+
+    .spec-card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px;
+      transition: border-color 0.2s ease, transform 0.2s ease;
+    }
+
+    .spec-card:hover {
+      border-color: var(--border-accent);
+      transform: translateY(-2px);
+    }
+
+    .spec-card-head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .spec-badge {
+      font-size: 11px;
+      font-family: 'JetBrains Mono', monospace;
+      padding: 2px 7px;
+      border-radius: 5px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .spec-card h3 {
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    .spec-card p {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .spec-card ul {
+      margin-top: 10px;
+      padding-left: 18px;
+      font-size: 12.5px;
+      color: var(--muted);
+    }
+
+    .spec-card li {
+      margin-bottom: 5px;
+    }
+
+    .spec-card li strong {
+      color: var(--text);
+    }
+
+    /* Modal Overlay for Fullscreen */
     .modal-overlay {
       display: none;
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.92);
+      background: rgba(0, 0, 0, 0.94);
       backdrop-filter: blur(8px);
       z-index: 1000;
       padding: 20px;
@@ -262,7 +380,7 @@
       display: flex;
     }
 
-    .modal-header {
+    .modal-head {
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -273,10 +391,9 @@
 
     .modal-viewport {
       flex: 1 1 auto;
-      height: calc(100vh - 120px);
       border-radius: 12px;
       border: 1px solid var(--border);
-      background: #090a0d;
+      background: #08090c;
       position: relative;
       overflow: hidden;
       cursor: grab;
@@ -286,71 +403,13 @@
       cursor: grabbing;
     }
 
-    /* Subsystem Cards Grid */
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 18px;
-      margin-top: 24px;
-    }
-
-    .info-card {
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 20px;
-    }
-
-    .info-card-header {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 10px;
-    }
-
-    .info-card-icon {
-      width: 28px;
-      height: 28px;
-      border-radius: 8px;
-      background: rgba(240, 166, 61, 0.12);
-      color: var(--accent);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 14px;
-    }
-
-    .info-card-title {
-      font-size: 15px;
-      font-weight: 600;
-    }
-
-    .info-card-body {
-      font-size: 13px;
+    footer {
+      text-align: center;
+      padding-top: 30px;
+      border-top: 1px solid var(--border);
       color: var(--muted);
-      line-height: 1.55;
-    }
-
-    .info-card-body ul {
-      margin-top: 8px;
-      padding-left: 18px;
-    }
-
-    .info-card-body li {
-      margin-bottom: 4px;
-    }
-
-    .tool-tag {
-      display: inline-block;
-      padding: 2px 7px;
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      font-size: 11px;
-      font-family: 'JetBrains Mono', monospace;
-      color: var(--accent-ink);
-      margin-right: 4px;
-      margin-top: 4px;
+      font-size: 12px;
+      margin-top: 40px;
     }
   </style>
 </head>
@@ -365,38 +424,45 @@
             <circle cx="50" cy="53" r="11" fill="#ffffff" />
           </svg>
         </div>
-        <div>
-          <h1>Glass<span>wing</span> Architecture</h1>
-          <p>Interactive Pan, Zoom, and High-Resolution Diagrams</p>
+        <div class="brand-text">
+          <h1>Glass<span>wing</span> Architecture Blueprint</h1>
+          <p>Senior Engineering System Specification · ReAct Agent Engine · C4 Level 2 View</p>
         </div>
       </div>
-      <div class="badge">
-        <span class="badge-dot"></span>
-        <span>PRODUCTION SPEC v2.0</span>
+      <div class="meta-pills">
+        <span class="pill pill-tier">PRODUCTION ARCHITECTURE</span>
+        <span class="pill pill-status"><span class="status-dot"></span>VERIFIED & DEPLOYED</span>
       </div>
     </header>
 
-    <!-- Section 1: System Architecture -->
-    <section class="section-card">
-      <div class="section-header">
-        <div>
-          <h2 class="section-title">
+    <!-- Nav View Switcher -->
+    <div class="tabs-bar">
+      <button class="tab-btn active" onclick="switchTab('system', this)">System Topology (C4 Level 2)</button>
+      <button class="tab-btn" onclick="switchTab('sequence', this)">ReAct Execution Pipeline</button>
+      <button class="tab-btn" onclick="switchTab('adrs', this)">Architectural Decisions (ADRs)</button>
+    </div>
+
+    <!-- Section 1: Clean Left-to-Right System Architecture -->
+    <section class="doc-section" id="section-system">
+      <div class="section-head">
+        <div class="section-head-left">
+          <h2>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
               <line x1="8" y1="21" x2="16" y2="21"/>
               <line x1="12" y1="17" x2="12" y2="21"/>
             </svg>
-            1. System Architecture
+            System Component & Protocol Topology
           </h2>
-          <p class="section-desc">Tiered topological map: Client (PWA) → API Gateway → ReAct Engine → Cloud DB</p>
+          <p>Clean 5-tier pipeline: Client PWA ➔ FastAPI Gateway ➔ ReAct Autonomous Engine ➔ Persistence & Model Providers</p>
         </div>
         <div class="toolbar">
-          <button class="tool-btn" onclick="zoom('arch', 1.25)" title="Zoom in">+</button>
-          <button class="tool-btn" onclick="zoom('arch', 0.8)" title="Zoom out">-</button>
-          <button class="tool-btn" onclick="resetZoom('arch')" title="Reset scale">↺ Reset</button>
-          <button class="tool-btn" onclick="openFullscreen('arch', 'System Architecture')" title="Fullscreen">⛶ Expand</button>
-          <button class="tool-btn primary" onclick="openInNewTab('arch')" title="Open diagram directly in full tab">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <button class="btn" onclick="zoom('sys', 1.25)" title="Zoom in">+</button>
+          <button class="btn" onclick="zoom('sys', 0.8)" title="Zoom out">-</button>
+          <button class="btn" onclick="resetZoom('sys')" title="Reset view">↺ Reset</button>
+          <button class="btn" onclick="openFullscreen('sys', 'System Topology')" title="Fullscreen">⛶ Expand</button>
+          <button class="btn primary" onclick="openInNewTab('sys')" title="Open diagram in new tab">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
               <polyline points="15 3 21 3 21 9"/>
               <line x1="10" y1="14" x2="21" y2="3"/>
@@ -406,85 +472,81 @@
         </div>
       </div>
 
-      <div class="viewport" id="viewport-arch">
-        <div class="viewport-canvas" id="canvas-arch">
-          <div class="mermaid" id="mermaid-arch">
-flowchart TD
-    subgraph Client["Client Tier (Vercel)"]
-        UI["React 18 + Vite SPA"]
-        PWA["PWA Service Worker & Manifest<br/>(sw.js / manifest.json)"]
-        COMP["Workspace & Chat Interface"]
-        TIMELINE["StepTimeline (Reasoning Trace)"]
-        COMPOSER["Floating Composer + Attachments"]
+      <div class="viewport" id="viewport-sys">
+        <div class="canvas" id="canvas-sys">
+          <div class="mermaid" id="mermaid-sys">
+flowchart LR
+    classDef client fill:#0d233a,stroke:#38bdf8,stroke-width:2px,color:#f0f9ff
+    classDef gateway fill:#231738,stroke:#c084fc,stroke-width:2px,color:#faf5ff
+    classDef engine fill:#2e1f0e,stroke:#f0a63d,stroke-width:2px,color:#fffbeb
+    classDef data fill:#08291f,stroke:#34d399,stroke-width:2px,color:#f0fdf4
+    classDef ext fill:#2b1219,stroke:#f43f5e,stroke-width:2px,color:#fff1f2
+
+    subgraph Tier1["1. Client Tier (Vercel)"]
+        direction TB
+        SPA["React 18 SPA<br/><i>Workspace · Composer · Timeline</i>"]:::client
+        SW["Service Worker (sw.js)<br/><i>Shell Cache & PWA Install</i>"]:::client
+        SPA --- SW
     end
 
-    subgraph API["Backend Gateway Tier (Render)"]
-        FASTAPI["FastAPI Async Server"]
-        AUTH["Google OAuth & Session Manager<br/>(JWT in HttpOnly Cookie)"]
-        HEALTH["Health Probe Endpoint<br/>(/api/health)"]
-        SSE["SSE Event Streamer<br/>(/api/chat)"]
+    subgraph Tier2["2. API Gateway (Render)"]
+        direction TB
+        API["FastAPI Async App<br/><i>Uvicorn ASGI Engine</i>"]:::gateway
+        Auth["Auth & Session Mgr<br/><i>OAuth 2.0 & HttpOnly JWT</i>"]:::gateway
+        API --- Auth
     end
 
-    subgraph Engine["Autonomous Agent Engine"]
-        REACT["ReAct Execution Loop<br/>(Thought -> Action -> Observation)"]
-        ROUTER["LLM Provider Router<br/>(Gemini 2.5 / Groq / OpenRouter)"]
-        
-        subgraph Tools["Tools Registry"]
-            SEARCH["Web Search<br/>(Tavily / Serper / DDG)"]
-            SCRAPE["Page Scraper<br/>(Trafilatura / jusText)"]
-            CALC["Math Calculator"]
-            CONV["Unit Converter"]
-            TIME["DateTime Resolver"]
-            VISION["Vision Grounding Engine"]
-        end
+    subgraph Tier3["3. Autonomous Agent Engine"]
+        direction TB
+        ReAct["ReAct Reasoning Loop<br/><i>Thought -> Action -> Observation</i>"]:::engine
+        Sandbox["Tool Execution Sandbox<br/><i>WebSearch · Scrape · Math · Vision</i>"]:::engine
+        ReAct <--> Sandbox
     end
 
-    subgraph Data["Persistence & Cloud Tier"]
-        DB[("Neon Serverless Postgres<br/>(Users & Chat History)")]
-        STORAGE[("Supabase S3 Storage<br/>(Image Uploads)")]
+    subgraph Tier4["4. Persistence & Storage"]
+        direction TB
+        DB[("Neon Postgres<br/><i>Users & Chat Sessions</i>")]:::data
+        S3[("Supabase S3<br/><i>Image Blobs</i>")]:::data
     end
 
-    UI --> PWA
-    COMP --> TIMELINE
-    COMP --> COMPOSER
-    
-    COMPOSER -- "HTTP POST (SSE Stream)" --> SSE
-    UI -- "Google OAuth" --> AUTH
-    UI -- "Cold Start Probe" --> HEALTH
-    
-    AUTH --> DB
-    SSE --> REACT
-    REACT <--> ROUTER
-    REACT --> Tools
-    
-    VISION --> STORAGE
-    SSE -- "Save Conversation" --> DB
+    subgraph Tier5["5. Model & Web Providers"]
+        direction TB
+        LLM["Foundation LLMs<br/><i>Gemini 2.5 / Groq</i>"]:::ext
+        Web["Search & Scrape APIs<br/><i>Tavily / Serper / Trafilatura</i>"]:::ext
+    end
+
+    SPA == "HTTPS / SSE Stream" ==> API
+    API == "Async Invocation" ==> ReAct
+    ReAct <== "Prompt / Reasoning Tokens" ==> LLM
+    Sandbox == "External REST" ==> Web
+    Sandbox -. "Presigned URLs" .-> S3
+    API == "SQL over TLS (Asyncpg)" ==> DB
           </div>
         </div>
-        <div class="viewport-hint">🖱️ Drag to pan · Scroll wheel to zoom</div>
+        <div class="canvas-hint">🖱️ Drag to pan · Scroll mouse wheel to zoom in/out</div>
       </div>
     </section>
 
-    <!-- Section 2: ReAct Sequence -->
-    <section class="section-card">
-      <div class="section-header">
-        <div>
-          <h2 class="section-title">
+    <!-- Section 2: ReAct Execution Sequence -->
+    <section class="doc-section" id="section-sequence" style="display: none;">
+      <div class="section-head">
+        <div class="section-head-left">
+          <h2>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="12" cy="12" r="10"/>
               <polyline points="12 6 12 12 16 14"/>
             </svg>
-            2. ReAct Autonomous Execution Sequence
+            ReAct Autonomous Execution Sequence
           </h2>
-          <p class="section-desc">Query turn lifecycle: live thought streaming, tool execution, and database persistence</p>
+          <p>Detailed sequence: Session Validation ➔ Thought Streaming ➔ Tool Execution ➔ Synthesis & DB Commit</p>
         </div>
         <div class="toolbar">
-          <button class="tool-btn" onclick="zoom('seq', 1.25)" title="Zoom in">+</button>
-          <button class="tool-btn" onclick="zoom('seq', 0.8)" title="Zoom out">-</button>
-          <button class="tool-btn" onclick="resetZoom('seq')" title="Reset scale">↺ Reset</button>
-          <button class="tool-btn" onclick="openFullscreen('seq', 'Execution Sequence')" title="Fullscreen">⛶ Expand</button>
-          <button class="tool-btn primary" onclick="openInNewTab('seq')" title="Open diagram directly in full tab">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <button class="btn" onclick="zoom('seq', 1.25)" title="Zoom in">+</button>
+          <button class="btn" onclick="zoom('seq', 0.8)" title="Zoom out">-</button>
+          <button class="btn" onclick="resetZoom('seq')" title="Reset view">↺ Reset</button>
+          <button class="btn" onclick="openFullscreen('seq', 'ReAct Execution Sequence')" title="Fullscreen">⛶ Expand</button>
+          <button class="btn primary" onclick="openInNewTab('seq')" title="Open diagram in new tab">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
               <polyline points="15 3 21 3 21 9"/>
               <line x1="10" y1="14" x2="21" y2="3"/>
@@ -495,117 +557,192 @@ flowchart TD
       </div>
 
       <div class="viewport" id="viewport-seq">
-        <div class="viewport-canvas" id="canvas-seq">
+        <div class="canvas" id="canvas-seq">
           <div class="mermaid" id="mermaid-seq">
 sequenceDiagram
     autonumber
     actor User as User
     participant FE as Frontend (React + SSE)
-    participant BE as FastAPI Backend
-    participant LLM as LLM (Gemini / OpenRouter)
-    participant Tool as Tool Dispatcher
+    participant BE as FastAPI Gateway
+    participant Agent as ReAct Engine
+    participant Tool as Tool Sandbox
+    participant LLM as LLM Provider
     participant DB as Neon Postgres
 
-    User->>FE: Types query & submits (with optional image)
-    FE->>FE: Mounts AbortController & opens SSE connection
-    FE->>BE: POST /api/chat (prompt, conversation_id, image_key)
-    BE->>BE: Verify session cookie & initialize ReAct state
-    
-    loop ReAct Autonomous Reasoning Cycle
-        BE->>LLM: Send system prompt, tool schemas & conversation history
-        LLM-->>BE: Stream "thinking" reasoning tokens
-        BE-->>FE: SSE event: {type: "thinking", content: "..."}
-        FE-->>User: Live updates StepTimeline (Mote is working)
-        
-        alt Agent Decides to Call a Tool
-            LLM-->>BE: Emit tool_call (e.g., web_search, fetch_url, calculator)
-            BE-->>FE: SSE event: {type: "tool_call", tool: "web_search", args: {...}}
-            BE->>Tool: Execute tool asynchronously
-            Tool-->>BE: Return observation / raw results
-            BE-->>FE: SSE event: {type: "tool_result", tool: "web_search", result: {...}}
-            BE->>BE: Append observation to ReAct prompt context
-        else Agent Has Final Answer
-            LLM-->>BE: Emit final response text
-            BE-->>FE: SSE event: {type: "final_answer", content: "..."}
-        end
+    rect rgb(20, 24, 34)
+    note right of User: Phase 1: Ingestion & Auth
+    User->>FE: Submits prompt (+ optional image)
+    FE->>BE: POST /api/chat (SSE Stream request)
+    BE->>BE: Validate HttpOnly JWT Cookie
     end
 
-    BE->>DB: Persist user prompt & final answer turn
+    rect rgb(30, 24, 18)
+    note right of BE: Phase 2: Autonomous ReAct Loop
+    BE->>Agent: Initialize ReAct State & History
+    loop Thought -> Action -> Observation Cycle
+        Agent->>LLM: Send system instructions & history
+        LLM-->>Agent: Stream "thinking" reasoning tokens
+        Agent-->>FE: SSE event: {type: "thinking", content: "..."}
+        
+        opt Tool Execution Needed
+            LLM-->>Agent: Decision: call_tool(name, args)
+            Agent-->>FE: SSE event: {type: "tool_call", name: "...", args: {...}}
+            Agent->>Tool: Execute async tool (WebSearch, Scraper, Calc)
+            Tool-->>Agent: Tool Observation / Raw Data
+            Agent-->>FE: SSE event: {type: "tool_result", result: {...}}
+            Agent->>Agent: Append observation to working context
+        end
+    end
+    end
+
+    rect rgb(18, 30, 24)
+    note right of Agent: Phase 3: Final Synthesis & Persistence
+    LLM-->>Agent: Generate grounded final answer
+    Agent-->>FE: SSE event: {type: "final_answer", content: "..."}
+    Agent->>DB: Persist turn into conversation history
     BE-->>FE: SSE event: [DONE]
-    FE->>FE: Update Mote to 'done', enable copy button & export options
+    FE-->>User: Display answer, domain citations & copy button
+    end
           </div>
         </div>
-        <div class="viewport-hint">🖱️ Drag to pan · Scroll wheel to zoom</div>
+        <div class="canvas-hint">🖱️ Drag to pan · Scroll mouse wheel to zoom in/out</div>
       </div>
     </section>
 
-    <!-- Subsystems Grid -->
-    <div class="grid">
-      <div class="info-card">
-        <div class="info-card-header">
-          <div class="info-card-icon">⚡</div>
-          <h3 class="info-card-title">Client Tier (PWA)</h3>
-        </div>
-        <div class="info-card-body">
-          Built on React 18 & Vite. Runs full-screen on mobile and desktop via service worker.
-          <ul>
-            <li><strong>sw.js:</strong> Offline shell caching and 1-tap installation.</li>
-            <li><strong>Mobile drawer:</strong> Slide-out history panel with no horizontal scrollbars.</li>
-            <li><strong>Mote:</strong> Reactive winged spark mascot reflecting agent state.</li>
-          </ul>
+    <!-- Section 3: Senior Engineering Architectural Decisions (ADRs) -->
+    <section class="doc-section" id="section-adrs" style="display: none;">
+      <div class="section-head">
+        <div class="section-head-left">
+          <h2>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="16" y1="13" x2="8" y2="13"/>
+              <line x1="16" y1="17" x2="8" y2="17"/>
+              <polyline points="10 9 9 9 8 9"/>
+            </svg>
+            Architectural Decision Records (ADRs)
+          </h2>
+          <p>Key design trade-offs, engineering rationale, and scalability decisions</p>
         </div>
       </div>
 
-      <div class="info-card">
-        <div class="info-card-header">
-          <div class="info-card-icon">🧠</div>
-          <h3 class="info-card-title">ReAct Engine</h3>
-        </div>
-        <div class="info-card-body">
-          Autonomous multi-step reasoning loop (Thought → Action → Observation):
-          <div>
-            <span class="tool-tag">web_search</span>
-            <span class="tool-tag">fetch_url</span>
-            <span class="tool-tag">calculator</span>
-            <span class="tool-tag">convert</span>
-            <span class="tool-tag">vision</span>
-            <span class="tool-tag">datetime</span>
+      <div class="spec-grid">
+        <div class="spec-card">
+          <div class="spec-card-head">
+            <span class="spec-badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8;">ADR-01</span>
+            <h3>Server-Sent Events (SSE) vs WebSockets</h3>
           </div>
-          <p style="margin-top:8px;">Streams thoughts immediately via Server-Sent Events to keep users informed.</p>
-        </div>
-      </div>
-
-      <div class="info-card">
-        <div class="info-card-header">
-          <div class="info-card-icon">🛡️</div>
-          <h3 class="info-card-title">Data & Privacy</h3>
-        </div>
-        <div class="info-card-body">
-          Serverless & zero-leak data architecture:
+          <p><strong>Decision:</strong> Used HTTP Server-Sent Events (SSE) for the chat generation pipeline over bi-directional WebSockets.</p>
           <ul>
-            <li><strong>Neon Postgres:</strong> Stores user profiles and encrypted sessions.</li>
-            <li><strong>Supabase S3:</strong> Presigned upload URLs for sticky image attachments.</li>
-            <li><strong>Google OAuth:</strong> Secure HttpOnly JWT session token.</li>
+            <li><strong>Native HTTP/2 Multiplexing:</strong> Operates over standard HTTPS with zero custom handshake overhead.</li>
+            <li><strong>Built-in Disconnect Detection:</strong> Supports <code>AbortController</code> on client and <code>request.is_disconnected()</code> on FastAPI to immediately kill wasted LLM token spend.</li>
+            <li><strong>Proxy & Firewall Friendly:</strong> Works reliably through corporate firewalls and edge networks without WebSocket connection drops.</li>
           </ul>
         </div>
+
+        <div class="spec-card">
+          <div class="spec-card-head">
+            <span class="spec-badge" style="background: rgba(240, 166, 61, 0.15); color: #f6bc63;">ADR-02</span>
+            <h3>Dynamic ReAct vs Fixed Execution DAG</h3>
+          </div>
+          <p><strong>Decision:</strong> Implemented a dynamic ReAct (Reason + Act) loop rather than hardcoded retrieval chains (e.g., standard RAG).</p>
+          <ul>
+            <li><strong>Autonomous Self-Correction:</strong> If an initial web query yields ambiguous results, the agent autonomously refines its search query.</li>
+            <li><strong>Multi-Tool Composition:</strong> Can chain a search query ➔ fetch page content ➔ extract raw numbers ➔ run calculator tool in a single turn.</li>
+            <li><strong>Strict Termination Guards:</strong> Hard limit of 8 loop iterations prevents infinite agent spins.</li>
+          </ul>
+        </div>
+
+        <div class="spec-card">
+          <div class="spec-card-head">
+            <span class="spec-badge" style="background: rgba(52, 211, 153, 0.15); color: #34d399;">ADR-03</span>
+            <h3>PWA Web Distribution vs Native App Stores</h3>
+          </div>
+          <p><strong>Decision:</strong> Distributed as an installable Progressive Web App (PWA) rather than a native Google Play / Apple app.</p>
+          <ul>
+            <li><strong>Zero Platform Fee:</strong> Avoids $25 Google Play fee and $99/yr Apple Developer tax.</li>
+            <li><strong>Zero Review Friction:</strong> Fixes, prompt refinements, and UI upgrades deploy instantly via Vercel CI/CD with no app review waiting periods.</li>
+            <li><strong>Regulatory Exemption:</strong> Bypasses Google Play's mandatory in-app account deletion audits and data safety filings at early-stage validation.</li>
+          </ul>
+        </div>
+
+        <div class="spec-card">
+          <div class="spec-card-head">
+            <span class="spec-badge" style="background: rgba(192, 132, 252, 0.15); color: #c084fc;">ADR-04</span>
+            <h3>Serverless Postgres + Blob Storage</h3>
+          </div>
+          <p><strong>Decision:</strong> Decoupled text transcripts (Neon Postgres) from visual binary attachments (Supabase S3).</p>
+          <ul>
+            <li><strong>Zero Database Bloat:</strong> Images are uploaded directly via presigned S3 URLs, preventing multi-megabyte binary payloads from degrading Postgres queries.</li>
+            <li><strong>Scale-to-Zero Cost:</strong> Neon Serverless Postgres pauses when idle, keeping database costs at $0 during inactive periods.</li>
+            <li><strong>Sticky Attachments:</strong> Reuses the S3 storage key across multi-turn queries without duplicate byte uploads.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Subsystems Overview (Always Visible) -->
+    <div class="spec-grid">
+      <div class="spec-card">
+        <div class="spec-card-head">
+          <span class="spec-badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8;">CLIENT</span>
+          <h3>Frontend Architecture</h3>
+        </div>
+        <p>Single-Page React 18 application optimized for real-time streaming and mobile ergonomics.</p>
+        <ul>
+          <li><strong>StepTimeline:</strong> Live visualization of intermediate thoughts, tool calls, and grounded domain pills.</li>
+          <li><strong>Ergonomic Drawer:</strong> Responsive slide-out history panel on mobile, eliminating top scrollbars.</li>
+          <li><strong>Service Worker:</strong> Instant PWA installability on desktop and mobile browsers.</li>
+        </ul>
+      </div>
+
+      <div class="spec-card">
+        <div class="spec-card-head">
+          <span class="spec-badge" style="background: rgba(240, 166, 61, 0.15); color: #f6bc63;">ENGINE</span>
+          <h3>Autonomous Agent Sandbox</h3>
+        </div>
+        <p>Asynchronous Python tool dispatcher providing live grounding and calculative rigor.</p>
+        <ul>
+          <li><strong>Web Grounding:</strong> Tavily, Serper, and DuckDuckGo with domain citation tracking.</li>
+          <li><strong>Content Extraction:</strong> Trafilatura / jusText clean DOM parsing without ads/boilerplate.</li>
+          <li><strong>Mathematical Rigor:</strong> Isolated Python math parser and unit converter preventing arithmetic hallucinations.</li>
+        </ul>
+      </div>
+
+      <div class="spec-card">
+        <div class="spec-card-head">
+          <span class="spec-badge" style="background: rgba(52, 211, 153, 0.15); color: #34d399;">DATA</span>
+          <h3>Security & Data Integrity</h3>
+        </div>
+        <p>Enterprise-grade authentication, session isolation, and cold-start resilience.</p>
+        <ul>
+          <li><strong>Auth:</strong> Google OAuth 2.0 with JWT stored exclusively in secure HttpOnly cookies.</li>
+          <li><strong>Cold Start Badge:</strong> Automated health probe alerting users during Render free-tier cold boots (~50s).</li>
+          <li><strong>Multi-tenant Isolation:</strong> All conversation operations scoped strictly to the authenticated user ID.</li>
+        </ul>
       </div>
     </div>
+
+    <footer>
+      <p>Glasswing Architecture Blueprint · Designed for production autonomy, transparency, and high performance</p>
+    </footer>
   </div>
 
-  <!-- Fullscreen Modal View -->
+  <!-- Fullscreen Modal Viewer -->
   <div class="modal-overlay" id="fullscreen-modal">
-    <div class="modal-header">
-      <h3 id="modal-title" style="font-size: 18px; font-weight: 600;">Diagram Viewer</h3>
+    <div class="modal-head">
+      <h3 id="modal-title" style="font-size: 17px; font-weight: 600;">Diagram Viewer</h3>
       <div class="toolbar">
-        <button class="tool-btn" onclick="zoom('modal', 1.25)">+ Zoom In</button>
-        <button class="tool-btn" onclick="zoom('modal', 0.8)">- Zoom Out</button>
-        <button class="tool-btn" onclick="resetZoom('modal')">↺ Reset</button>
-        <button class="tool-btn" onclick="closeFullscreen()">✕ Close</button>
+        <button class="btn" onclick="zoom('modal', 1.25)">+ Zoom In</button>
+        <button class="btn" onclick="zoom('modal', 0.8)">- Zoom Out</button>
+        <button class="btn" onclick="resetZoom('modal')">↺ Reset</button>
+        <button class="btn" onclick="closeFullscreen()">✕ Close</button>
       </div>
     </div>
     <div class="modal-viewport" id="viewport-modal">
-      <div class="viewport-canvas" id="canvas-modal"></div>
-      <div class="viewport-hint">🖱️ Drag to pan · Scroll wheel to zoom</div>
+      <div class="canvas" id="canvas-modal"></div>
+      <div class="canvas-hint">🖱️ Drag to pan · Scroll mouse wheel to zoom in/out</div>
     </div>
   </div>
 
@@ -615,33 +752,32 @@ sequenceDiagram
       theme: 'dark',
       themeVariables: {
         darkMode: true,
-        background: '#090a0d',
-        primaryColor: '#1a1d26',
+        background: '#08090c',
+        primaryColor: '#191c24',
         primaryBorderColor: '#f0a63d',
         primaryTextColor: '#f1f2f6',
         lineColor: '#f0a63d',
-        secondaryColor: '#14161c',
-        tertiaryColor: '#101116',
+        secondaryColor: '#13151b',
+        tertiaryColor: '#0e1015',
         actorBorder: '#f0a63d',
-        actorBkg: '#191c24',
+        actorBkg: '#181b23',
         actorTextColor: '#f1f2f6',
         signalColor: '#f0a63d',
         signalTextColor: '#f1f2f6',
-        labelBoxBkgColor: '#191c24',
-        labelBoxBorderColor: '#2c313a',
+        labelBoxBkgColor: '#181b23',
+        labelBoxBorderColor: '#2b303c',
         labelTextColor: '#f1f2f6',
-        loopTextColor: '#8c91a1',
+        loopTextColor: '#8e94a5',
         noteBorderColor: '#f0a63d',
-        noteBkgColor: '#191c24'
+        noteBkgColor: '#181b23'
       },
       fontFamily: 'Inter, sans-serif'
     });
 
-    // Pan & Zoom Engine for each viewport
     const viewStates = {
-      arch: { scale: 1, x: 0, y: 0, isDragging: false, startX: 0, startY: 0 },
-      seq: { scale: 1, x: 0, y: 0, isDragging: false, startX: 0, startY: 0 },
-      modal: { scale: 1, x: 0, y: 0, isDragging: false, startX: 0, startY: 0 }
+      sys: { scale: 1.05, x: 0, y: 0, isDragging: false, startX: 0, startY: 0 },
+      seq: { scale: 1.0, x: 0, y: 0, isDragging: false, startX: 0, startY: 0 },
+      modal: { scale: 1.0, x: 0, y: 0, isDragging: false, startX: 0, startY: 0 }
     };
 
     function updateTransform(id) {
@@ -654,13 +790,13 @@ sequenceDiagram
 
     function zoom(id, factor) {
       const state = viewStates[id];
-      state.scale = Math.min(Math.max(0.3, state.scale * factor), 4);
+      state.scale = Math.min(Math.max(0.3, state.scale * factor), 4.5);
       updateTransform(id);
     }
 
     function resetZoom(id) {
       const state = viewStates[id];
-      state.scale = 1;
+      state.scale = id === 'sys' ? 1.05 : 1.0;
       state.x = 0;
       state.y = 0;
       updateTransform(id);
@@ -669,6 +805,7 @@ sequenceDiagram
     function setupPanZoom(id) {
       const viewport = document.getElementById(`viewport-${id}`);
       const state = viewStates[id];
+      if (!viewport) return;
 
       viewport.addEventListener('mousedown', (e) => {
         state.isDragging = true;
@@ -694,37 +831,47 @@ sequenceDiagram
       }, { passive: false });
     }
 
-    setupPanZoom('arch');
+    setupPanZoom('sys');
     setupPanZoom('seq');
     setupPanZoom('modal');
 
-    // Open diagram as pure standalone SVG in a new tab
+    function switchTab(tab, btn) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      document.getElementById('section-system').style.display = tab === 'system' ? 'block' : 'none';
+      document.getElementById('section-sequence').style.display = tab === 'sequence' ? 'block' : 'none';
+      document.getElementById('section-adrs').style.display = tab === 'adrs' ? 'block' : 'none';
+
+      // Re-trigger transform after tab display flip
+      if (tab === 'system') updateTransform('sys');
+      if (tab === 'sequence') updateTransform('seq');
+    }
+
     function openInNewTab(id) {
       const container = document.getElementById(`mermaid-${id}`);
       const svg = container ? container.querySelector('svg') : null;
       if (!svg) {
-        alert("Diagram is still rendering, please wait a moment.");
+        alert("Diagram is rendering, please try again in a second.");
         return;
       }
 
-      // Clone SVG and set clean attributes for standalone viewing
       const clonedSvg = svg.cloneNode(true);
       clonedSvg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-      clonedSvg.style.background = '#090a0d';
+      clonedSvg.style.background = '#08090c';
       clonedSvg.style.width = '100vw';
       clonedSvg.style.height = '100vh';
       clonedSvg.style.padding = '40px';
 
       const svgData = new XMLSerializer().serializeToString(clonedSvg);
       const blob = new Blob([
-        `<!DOCTYPE html><html><head><title>Glasswing Diagram</title><style>body{margin:0;background:#090a0d;display:flex;justify-content:center;align-items:center;min-height:100vh;overflow:auto;}</style></head><body>${svgData}</body></html>`
+        `<!DOCTYPE html><html><head><title>Glasswing Architecture Diagram</title><style>body{margin:0;background:#08090c;display:flex;justify-content:center;align-items:center;min-height:100vh;overflow:auto;}</style></head><body>${svgData}</body></html>`
       ], { type: 'text/html' });
 
       const url = URL.createObjectURL(blob);
       window.open(url, '_blank');
     }
 
-    // Fullscreen Modal View
     function openFullscreen(id, title) {
       const modal = document.getElementById('fullscreen-modal');
       const modalTitle = document.getElementById('modal-title');

@@ -3,16 +3,16 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Glasswing — System Architecture Diagram</title>
+  <title>Glasswing — System Topology Blueprint (C4 Level 2)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
   <style>
     body {
       margin: 0;
       padding: 0;
-      background: #090a0d;
+      background: #08090c;
       color: #f1f2f6;
       font-family: 'Inter', sans-serif;
       overflow: hidden;
@@ -32,11 +32,11 @@
     }
     .title-pill {
       pointer-events: auto;
-      background: rgba(20, 22, 28, 0.9);
-      border: 1px solid rgba(240, 166, 61, 0.3);
+      background: rgba(19, 21, 27, 0.9);
+      border: 1px solid rgba(240, 166, 61, 0.35);
       padding: 8px 16px;
       border-radius: 9999px;
-      font-size: 14px;
+      font-size: 13.5px;
       font-weight: 600;
       color: #f6bc63;
       backdrop-filter: blur(8px);
@@ -48,12 +48,12 @@
       gap: 8px;
     }
     .btn {
-      background: rgba(20, 22, 28, 0.9);
+      background: rgba(19, 21, 27, 0.9);
       border: 1px solid rgba(255, 255, 255, 0.12);
       color: #f1f2f6;
-      padding: 8px 14px;
+      padding: 7px 14px;
       border-radius: 8px;
-      font-size: 13px;
+      font-size: 12.5px;
       font-weight: 500;
       cursor: pointer;
       backdrop-filter: blur(8px);
@@ -90,80 +90,76 @@
       position: absolute;
       bottom: 16px;
       right: 20px;
-      background: rgba(14, 16, 22, 0.85);
+      background: rgba(14, 16, 22, 0.88);
       border: 1px solid rgba(255, 255, 255, 0.1);
       padding: 6px 12px;
       border-radius: 6px;
       font-size: 12px;
-      color: #8c91a1;
+      color: #8e94a5;
       pointer-events: none;
     }
   </style>
 </head>
 <body>
   <div class="top-bar">
-    <div class="title-pill">Glasswing · System Architecture Diagram</div>
+    <div class="title-pill">Glasswing · System Topology Blueprint (C4 Level 2)</div>
     <div class="controls">
       <button class="btn" onclick="zoom(1.25)">+ Zoom In</button>
       <button class="btn" onclick="zoom(0.8)">- Zoom Out</button>
       <button class="btn" onclick="reset()">↺ Reset</button>
-      <button class="btn" onclick="window.location.href='architecture.html'">Back to Hub</button>
+      <button class="btn" onclick="window.location.href='architecture.html'">Back to Architecture Hub</button>
     </div>
   </div>
 
   <div class="viewport" id="viewport">
     <div class="canvas" id="canvas">
       <div class="mermaid">
-flowchart TD
-    subgraph Client["Client Tier (Vercel)"]
-        UI["React 18 + Vite SPA"]
-        PWA["PWA Service Worker & Manifest<br/>(sw.js / manifest.json)"]
-        COMP["Workspace & Chat Interface"]
-        TIMELINE["StepTimeline (Reasoning Trace)"]
-        COMPOSER["Floating Composer + Sticky Attachments"]
+flowchart LR
+    classDef client fill:#0d233a,stroke:#38bdf8,stroke-width:2px,color:#f0f9ff
+    classDef gateway fill:#231738,stroke:#c084fc,stroke-width:2px,color:#faf5ff
+    classDef engine fill:#2e1f0e,stroke:#f0a63d,stroke-width:2px,color:#fffbeb
+    classDef data fill:#08291f,stroke:#34d399,stroke-width:2px,color:#f0fdf4
+    classDef ext fill:#2b1219,stroke:#f43f5e,stroke-width:2px,color:#fff1f2
+
+    subgraph Tier1["1. Client Tier (Vercel)"]
+        direction TB
+        SPA["React 18 SPA<br/><i>Workspace · Composer · Timeline</i>"]:::client
+        SW["Service Worker (sw.js)<br/><i>Shell Cache & PWA Install</i>"]:::client
+        SPA --- SW
     end
 
-    subgraph API["Backend Gateway Tier (Render)"]
-        FASTAPI["FastAPI Async Server"]
-        AUTH["Google OAuth & Session Manager<br/>(JWT in HttpOnly Cookie)"]
-        HEALTH["Health Probe Endpoint<br/>(/api/health)"]
-        SSE["SSE Event Streamer<br/>(/api/chat)"]
+    subgraph Tier2["2. API Gateway (Render)"]
+        direction TB
+        API["FastAPI Async App<br/><i>Uvicorn ASGI Engine</i>"]:::gateway
+        Auth["Auth & Session Mgr<br/><i>OAuth 2.0 & HttpOnly JWT</i>"]:::gateway
+        API --- Auth
     end
 
-    subgraph Engine["Autonomous Agent Engine"]
-        REACT["ReAct Execution Loop<br/>(Thought -> Action -> Observation)"]
-        ROUTER["LLM Provider Router<br/>(Gemini 2.5 / Groq / OpenRouter)"]
-        
-        subgraph Tools["Tools Registry"]
-            SEARCH["Web Search<br/>(Tavily / Serper / DDG)"]
-            SCRAPE["Page Scraper<br/>(Trafilatura / jusText)"]
-            CALC["Math Calculator"]
-            CONV["Unit Converter"]
-            TIME["DateTime Resolver"]
-            VISION["Vision Grounding Engine"]
-        end
+    subgraph Tier3["3. Autonomous Agent Engine"]
+        direction TB
+        ReAct["ReAct Reasoning Loop<br/><i>Thought -> Action -> Observation</i>"]:::engine
+        Sandbox["Tool Execution Sandbox<br/><i>WebSearch · Scrape · Math · Vision</i>"]:::engine
+        ReAct <--> Sandbox
     end
 
-    subgraph Data["Persistence & Cloud Tier"]
-        DB[("Neon Serverless Postgres<br/>(Users & Chat History)")]
-        STORAGE[("Supabase S3 Storage<br/>(Image Uploads)")]
+    subgraph Tier4["4. Persistence & Storage"]
+        direction TB
+        DB[("Neon Postgres<br/><i>Users & Chat Sessions</i>")]:::data
+        S3[("Supabase S3<br/><i>Image Blobs</i>")]:::data
     end
 
-    UI --> PWA
-    COMP --> TIMELINE
-    COMP --> COMPOSER
-    
-    COMPOSER -- "HTTP POST (SSE Stream)" --> SSE
-    UI -- "Google OAuth" --> AUTH
-    UI -- "Cold Start Probe" --> HEALTH
-    
-    AUTH --> DB
-    SSE --> REACT
-    REACT <--> ROUTER
-    REACT --> Tools
-    
-    VISION --> STORAGE
-    SSE -- "Save Conversation" --> DB
+    subgraph Tier5["5. Model & Web Providers"]
+        direction TB
+        LLM["Foundation LLMs<br/><i>Gemini 2.5 / Groq</i>"]:::ext
+        Web["Search & Scrape APIs<br/><i>Tavily / Serper / Trafilatura</i>"]:::ext
+    end
+
+    SPA == "HTTPS / SSE Stream" ==> API
+    API == "Async Invocation" ==> ReAct
+    ReAct <== "Prompt / Reasoning Tokens" ==> LLM
+    Sandbox == "External REST" ==> Web
+    Sandbox -. "Presigned URLs" .-> S3
+    API == "SQL over TLS (Asyncpg)" ==> DB
       </div>
     </div>
   </div>
@@ -176,13 +172,13 @@ flowchart TD
       theme: 'dark',
       themeVariables: {
         darkMode: true,
-        background: '#090a0d',
-        primaryColor: '#1a1d26',
+        background: '#08090c',
+        primaryColor: '#191c24',
         primaryBorderColor: '#f0a63d',
         primaryTextColor: '#f1f2f6',
         lineColor: '#f0a63d',
-        secondaryColor: '#14161c',
-        tertiaryColor: '#101116'
+        secondaryColor: '#13151b',
+        tertiaryColor: '#0e1015'
       },
       fontFamily: 'Inter, sans-serif'
     });
