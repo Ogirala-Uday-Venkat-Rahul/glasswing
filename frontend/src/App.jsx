@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import Workspace from "./components/Workspace.jsx";
 import Login from "./components/Login.jsx";
 import Mote from "./components/Mote.jsx";
-import { getMe, logout } from "./api.js";
+import { getMe, logout, checkHealth } from "./api.js";
 
 // The app is gated on being signed in. On load we ask the backend "who am I?"
 // (getMe reads the session cookie); until that returns we show a boot screen,
@@ -33,6 +33,8 @@ export default function App() {
   const [slowBoot, setSlowBoot] = useState(false);
   // Drives the header mascot: "idle" | "working" | "done".
   const [agentState, setAgentState] = useState("idle");
+  // Backend availability probe for Render free-tier cold starts.
+  const [backendOnline, setBackendOnline] = useState(null);
   // Theme: dark by default; persisted so a return visit keeps the choice.
   const [theme, setTheme] = useState(() => localStorage.getItem("gw-theme") || "dark");
 
@@ -40,6 +42,21 @@ export default function App() {
     document.documentElement.setAttribute("data-theme", theme);
     localStorage.setItem("gw-theme", theme);
   }, [theme]);
+
+  // Probe backend health to detect cold starts
+  useEffect(() => {
+    let active = true;
+    async function probe() {
+      const ok = await checkHealth();
+      if (active) setBackendOnline(ok);
+      // If offline/waking, retry in 5s until it wakes up
+      if (!ok && active) {
+        setTimeout(probe, 5000);
+      }
+    }
+    probe();
+    return () => { active = false; };
+  }, []);
 
   // Ask who we are, and survive a cold/unreachable backend: retry with backoff
   // instead of hanging on the spinner forever.
@@ -54,8 +71,10 @@ export default function App() {
         if (cancelled) return;
         clearTimeout(slowTimer);
         setMe(who);
+        setBackendOnline(true);
       } catch {
         // Connection refused (backend down/waking) -- back off and try again.
+        setBackendOnline(false);
         attempts += 1;
         if (!cancelled) setTimeout(load, Math.min(1500 * attempts, 6000));
       }
@@ -86,14 +105,29 @@ export default function App() {
             <p className="tagline">An agent you can see think.</p>
           </div>
         </div>
-        <button
-          className="theme-toggle"
-          onClick={toggleTheme}
-          aria-label="Toggle light and dark theme"
-          title="Toggle theme"
-        >
-          {theme === "dark" ? "☀" : "☾"}
-        </button>
+        <div className="header-right">
+          {backendOnline !== null && (
+            <div
+              className={`status-pill ${backendOnline ? "online" : "waking"}`}
+              title={
+                backendOnline
+                  ? "Render backend is awake and responsive"
+                  : "Render backend is currently cold-starting (~50s on free tier)"
+              }
+            >
+              <span className="status-dot" />
+              <span>{backendOnline ? "Backend: Online" : "Backend: Waking (~50s)"}</span>
+            </div>
+          )}
+          <button
+            className="theme-toggle"
+            onClick={toggleTheme}
+            aria-label="Toggle light and dark theme"
+            title="Toggle theme"
+          >
+            {theme === "dark" ? "☀" : "☾"}
+          </button>
+        </div>
       </header>
 
       {me === null ? (

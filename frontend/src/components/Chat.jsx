@@ -22,6 +22,7 @@ export default function Chat({
   input,
   onInputChange,
   onSubmit,
+  onStop,
   onExample,
   attachedImage,
   onPickImage,
@@ -34,8 +35,79 @@ export default function Chat({
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [exchanges]);
 
+  function handleExport() {
+    if (!exchanges || exchanges.length === 0) return;
+
+    const lines = [
+      "# Glasswing Agent Research Session",
+      `*Generated on ${new Date().toISOString().replace("T", " ").slice(0, 19)} UTC*`,
+      "",
+      "---",
+      "",
+    ];
+
+    exchanges.forEach((ex, idx) => {
+      lines.push(`## Turn ${idx + 1}`);
+      lines.push(`**Prompt:** ${ex.question}`);
+      if (ex.image) {
+        lines.push(`*(Attached image analyzed)*`);
+      }
+      lines.push("");
+
+      const steps = ex.steps || [];
+      const nonAnswerSteps = steps.filter((s) => s.type !== "final_answer");
+      if (nonAnswerSteps.length > 0) {
+        lines.push("### Execution & Reasoning Trace:");
+        nonAnswerSteps.forEach((s) => {
+          if (s.type === "thinking") {
+            lines.push(`- *Thinking:* ${s.content}`);
+          } else if (s.type === "tool_call") {
+            const args = s.args ? JSON.stringify(s.args) : "";
+            lines.push(`- **Tool Call (${s.tool}):** \`${args}\``);
+          } else if (s.type === "tool_result") {
+            lines.push(`- **Result (${s.tool}):** \`${s.content}\``);
+          } else if (s.type === "error") {
+            lines.push(`- **Error:** ${s.content}`);
+          }
+        });
+        lines.push("");
+      }
+
+      const answer = steps.find((s) => s.type === "final_answer");
+      if (answer) {
+        lines.push("### Final Answer:");
+        lines.push(answer.content);
+        lines.push("");
+      }
+      lines.push("---");
+      lines.push("");
+    });
+
+    const blob = new Blob([lines.join("\n")], { type: "text/markdown;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `glasswing-research-${Date.now()}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   return (
     <div className="chat">
+      {exchanges.length > 0 && (
+        <div className="chat-actions">
+          <button
+            type="button"
+            className="export-btn"
+            onClick={handleExport}
+            title="Download conversation transcript and reasoning steps as Markdown"
+          >
+            <ExportIcon />
+            Export (.md)
+          </button>
+        </div>
+      )}
+
       <div className="exchanges">
         {exchanges.length === 0 && (
           <div className="empty">
@@ -114,15 +186,37 @@ export default function Chat({
         <input
           type="text"
           value={input}
-          placeholder={busy ? "Agent is working…" : "Ask anything…"}
+          placeholder={busy ? "Agent is working… click Stop to halt" : "Ask anything…"}
           onChange={(e) => onInputChange(e.target.value)}
           disabled={busy}
         />
-        <button type="submit" disabled={busy || (!input.trim() && !attachedImage)}>
-          {busy ? "…" : "Ask"}
-        </button>
+        {busy ? (
+          <button
+            type="button"
+            className="stop-btn"
+            onClick={onStop}
+            title="Stop agent execution"
+          >
+            <span className="stop-sq" />
+            Stop
+          </button>
+        ) : (
+          <button type="submit" disabled={!input.trim() && !attachedImage}>
+            Ask
+          </button>
+        )}
       </form>
     </div>
+  );
+}
+
+function ExportIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+      <polyline points="7 10 12 15 17 10" />
+      <line x1="12" y1="15" x2="12" y2="3" />
+    </svg>
   );
 }
 

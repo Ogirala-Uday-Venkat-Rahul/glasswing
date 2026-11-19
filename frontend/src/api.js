@@ -20,6 +20,20 @@
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
+// --- Health / Cold-start Probe -----------------------------------------------
+
+export async function checkHealth(apiBase = API_BASE) {
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 6000);
+    const res = await fetch(`${apiBase}/health`, { signal: controller.signal });
+    clearTimeout(timeout);
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 // --- Auth -------------------------------------------------------------------
 //
 // The session lives in an httpOnly cookie the JS can't read, so we never handle
@@ -137,13 +151,18 @@ function parseFrame(frame) {
   }
 }
 
-export async function* streamChat(message, { conversationId = null, imageKey = null, onMeta } = {}, apiBase = API_BASE) {
+export async function* streamChat(
+  message,
+  { conversationId = null, imageKey = null, onMeta, signal = null } = {},
+  apiBase = API_BASE
+) {
   const res = await fetch(`${apiBase}/chat`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     // Send the gw_session cookie so the backend knows who is asking and can own
     // the conversation. Without this the browser withholds the cookie on POST.
     credentials: "include",
+    signal,
     // conversation_id is null on the first turn (the server mints one) and the
     // saved id on later turns (the server loads that thread's history). image_key
     // is the storage key from a prior /upload when the user attached a picture.

@@ -105,6 +105,53 @@ body {
   font-size: 12.5px;
 }
 
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 11.5px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.02em;
+  border: 1px solid var(--border-2);
+  background: var(--field);
+  transition: all 0.2s ease;
+}
+
+.status-pill.online {
+  color: var(--result);
+  border-color: rgba(88, 201, 166, 0.3);
+}
+
+.status-pill.waking {
+  color: var(--accent-ink);
+  border-color: rgba(240, 166, 61, 0.4);
+  background: rgba(240, 166, 61, 0.05);
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.status-pill.waking .status-dot {
+  animation: pulse-dot 1.4s infinite ease-in-out;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 0.3; transform: scale(0.9); }
+  50% { opacity: 1; transform: scale(1.2); }
+}
+
 .theme-toggle {
   display: inline-flex;
   align-items: center;
@@ -867,6 +914,55 @@ body {
   opacity: 0.5;
   cursor: not-allowed;
   box-shadow: none;
+}
+
+.composer > button.stop-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: linear-gradient(180deg, #f87171, var(--error));
+  color: #1a0808;
+  box-shadow: 0 0 16px -6px var(--error);
+}
+
+.composer > button.stop-btn:hover {
+  filter: brightness(1.1);
+}
+
+.stop-sq {
+  width: 9px;
+  height: 9px;
+  background: currentColor;
+  border-radius: 2px;
+}
+
+/* Chat actions strip (Export, etc.) */
+.chat-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0 0 12px;
+  margin-bottom: 8px;
+}
+
+.export-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-2);
+  background: var(--panel);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.export-btn:hover {
+  color: var(--text);
+  border-color: var(--accent);
+  background: var(--panel-top);
 }
 
 /* Attach-an-image control: a ghost button that swaps to a thumbnail with a

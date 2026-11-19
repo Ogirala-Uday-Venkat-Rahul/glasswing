@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Sidebar from "./Sidebar.jsx";
 import Chat from "./Chat.jsx";
 import {
@@ -39,6 +39,7 @@ export default function Workspace({ onAgentState }) {
   const [exchanges, setExchanges] = useState([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
+  const abortRef = useRef(null);
   // The active image attachment, or null. It stays attached across follow-up
   // turns (a "sticky" image), so you can keep asking about the same picture --
   // the model sees it again each turn -- until you remove it or pick another.
@@ -115,10 +116,14 @@ export default function Workspace({ onAgentState }) {
       }
     }
 
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     try {
       for await (const step of streamChat(question, {
         conversationId: activeId,
         imageKey,
+        signal: controller.signal,
         // The backend mints an id on the first turn; remember it so follow-ups
         // (and the sidebar) point at the same conversation.
         onMeta: (meta) => setActiveId(meta.conversation_id),
@@ -137,17 +142,26 @@ export default function Workspace({ onAgentState }) {
         });
       }
     } catch (err) {
+      const isAbort = err.name === "AbortError" || controller.signal.aborted;
       setExchanges((prev) => {
         const next = [...prev];
-        const errStep = { type: "error", content: `Could not reach the agent: ${err.message}` };
+        const stepContent = isAbort ? "Generation stopped by user." : `Could not reach the agent: ${err.message}`;
+        const errStep = { type: isAbort ? "thinking" : "error", content: stepContent };
         next[index] = { ...next[index], streaming: "", steps: [...next[index].steps, errStep] };
         return next;
       });
     } finally {
+      abortRef.current = null;
       setBusy(false);
       settleAgent();
       // A brand-new chat now exists in the database -- pull it into the sidebar.
       if (wasNew) refreshConversations();
+    }
+  }
+
+  function handleStop() {
+    if (abortRef.current) {
+      abortRef.current.abort();
     }
   }
 
@@ -217,6 +231,7 @@ export default function Workspace({ onAgentState }) {
         input={input}
         onInputChange={setInput}
         onSubmit={onSubmit}
+        onStop={handleStop}
         onExample={askExample}
         attachedImage={attachment?.url || null}
         onPickImage={pickImage}
