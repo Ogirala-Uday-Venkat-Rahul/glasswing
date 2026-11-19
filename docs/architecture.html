@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Glasswing — High Level Design Architecture</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    :root {
+      --bg: #0b0c10;
+      --panel: #14161c;
+      --panel-top: #191c24;
+      --border: rgba(255, 255, 255, 0.08);
+      --border-accent: rgba(240, 166, 61, 0.3);
+      --text: #f1f2f6;
+      --muted: #8c91a1;
+      --accent: #f0a63d;
+      --accent-ink: #f6bc63;
+      --card-bg: rgba(20, 22, 28, 0.7);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.6;
+      min-height: 100vh;
+      padding: 32px 20px 80px;
+    }
+
+    .container {
+      max-width: 1240px;
+      margin: 0 auto;
+    }
+
+    /* Header */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 24px;
+      margin-bottom: 32px;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .brand-icon {
+      width: 44px;
+      height: 44px;
+      background: radial-gradient(circle at 50% 50%, rgba(240, 166, 61, 0.25) 0%, transparent 70%), var(--panel);
+      border: 1px solid var(--border-accent);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 20px rgba(240, 166, 61, 0.15);
+    }
+
+    .brand h1 {
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .brand h1 span {
+      color: var(--accent);
+    }
+
+    .brand p {
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 12px;
+      border-radius: 9999px;
+      background: rgba(240, 166, 61, 0.1);
+      border: 1px solid var(--border-accent);
+      color: var(--accent-ink);
+      font-size: 12px;
+      font-weight: 600;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .badge-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 8px var(--accent);
+    }
+
+    /* Nav Tabs */
+    .nav-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 28px;
+      background: var(--panel);
+      padding: 5px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      width: fit-content;
+    }
+
+    .tab-btn {
+      padding: 8px 18px;
+      border-radius: 8px;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font-size: 13.5px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .tab-btn:hover {
+      color: var(--text);
+    }
+
+    .tab-btn.active {
+      background: var(--panel-top);
+      color: var(--accent-ink);
+      border: 1px solid var(--border-accent);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+    }
+
+    /* Diagram Section Cards */
+    .section-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 28px;
+      margin-bottom: 32px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.35);
+      backdrop-filter: blur(10px);
+      transition: border-color 0.2s;
+    }
+
+    .section-card:hover {
+      border-color: rgba(255, 255, 255, 0.14);
+    }
+
+    .section-header {
+      margin-bottom: 20px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .section-title {
+      font-size: 19px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .section-desc {
+      font-size: 13.5px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    .diagram-viewport {
+      background: #0f1015;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 30px 20px;
+      overflow-x: auto;
+      display: flex;
+      justify-content: center;
+    }
+
+    /* Subsystem Spec Grid */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 18px;
+      margin-top: 24px;
+    }
+
+    .info-card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px;
+      transition: all 0.2s ease;
+    }
+
+    .info-card:hover {
+      border-color: var(--border-accent);
+      transform: translateY(-2px);
+    }
+
+    .info-card-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .info-card-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: rgba(240, 166, 61, 0.12);
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+    }
+
+    .info-card-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .info-card-body {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .info-card-body ul {
+      margin-top: 8px;
+      padding-left: 18px;
+    }
+
+    .info-card-body li {
+      margin-bottom: 4px;
+    }
+
+    /* Tool tags */
+    .tool-tag {
+      display: inline-block;
+      padding: 2px 7px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 11px;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--accent-ink);
+      margin-right: 4px;
+      margin-top: 4px;
+    }
+
+    footer {
+      text-align: center;
+      padding-top: 24px;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 12.5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="brand">
+        <div class="brand-icon">
+          <svg width="24" height="24" viewBox="0 0 100 100" fill="none">
+            <path d="M50 52 C30 30 8 34 6 54 C24 51 40 51 50 52Z" fill="#f0a63d" fill-opacity="0.35" stroke="#f0a63d" stroke-width="3" />
+            <path d="M50 52 C70 30 92 34 94 54 C76 51 60 51 50 52Z" fill="#f0a63d" fill-opacity="0.35" stroke="#f0a63d" stroke-width="3" />
+            <circle cx="50" cy="53" r="11" fill="#ffffff" />
+          </svg>
+        </div>
+        <div>
+          <h1>Glass<span>wing</span> Architecture</h1>
+          <p>High Level Design, Component Interactions & ReAct Agent Flow</p>
+        </div>
+      </div>
+      <div class="badge">
+        <span class="badge-dot"></span>
+        <span>PRODUCTION SPEC v2.0</span>
+      </div>
+    </header>
+
+    <div class="nav-tabs">
+      <button class="tab-btn active" onclick="switchView('all', this)">Overview</button>
+      <button class="tab-btn" onclick="switchView('architecture', this)">System Architecture</button>
+      <button class="tab-btn" onclick="switchView('sequence', this)">Execution Flow</button>
+    </div>
+
+    <!-- Section 1: System Architecture -->
+    <section class="section-card" id="card-architecture">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+              <line x1="8" y1="21" x2="16" y2="21"/>
+              <line x1="12" y1="17" x2="12" y2="21"/>
+            </svg>
+            System Architecture
+          </h2>
+          <p class="section-desc">Tiered topological view of the Client, Gateway, Agent Engine, and Cloud Storage</p>
+        </div>
+      </div>
+
+      <div class="diagram-viewport">
+        <div class="mermaid">
+flowchart TD
+    subgraph Client["Client Tier (Vercel)"]
+        UI["React 18 + Vite SPA"]
+        PWA["PWA Service Worker & Manifest<br/>(sw.js / manifest.json)"]
+        COMP["Workspace & Chat Interface"]
+        TIMELINE["StepTimeline (Reasoning Trace)"]
+        COMPOSER["Floating Composer + Attachments"]
+    end
+
+    subgraph API["Backend Gateway Tier (Render)"]
+        FASTAPI["FastAPI Async Server"]
+        AUTH["Google OAuth & Session Manager<br/>(JWT in HttpOnly Cookie)"]
+        HEALTH["Health Probe Endpoint<br/>(/api/health)"]
+        SSE["SSE Event Streamer<br/>(/api/chat)"]
+    end
+
+    subgraph Engine["Autonomous Agent Engine"]
+        REACT["ReAct Execution Loop<br/>(Thought -> Action -> Observation)"]
+        ROUTER["LLM Provider Router<br/>(Gemini 2.5 / Groq / OpenRouter)"]
+        
+        subgraph Tools["Tools Registry"]
+            SEARCH["Web Search<br/>(Tavily / Serper / DDG)"]
+            SCRAPE["Page Scraper<br/>(Trafilatura / jusText)"]
+            CALC["Math Calculator"]
+            CONV["Unit Converter"]
+            TIME["DateTime Resolver"]
+            VISION["Vision Grounding Engine"]
+        end
+    end
+
+    subgraph Data["Persistence & Cloud Tier"]
+        DB[("Neon Serverless Postgres<br/>(Users & Chat History)")]
+        STORAGE[("Supabase S3 Storage<br/>(Image Uploads)")]
+    end
+
+    UI --> PWA
+    COMP --> TIMELINE
+    COMP --> COMPOSER
+    
+    COMPOSER -- "HTTP POST (SSE Stream)" --> SSE
+    UI -- "Google OAuth" --> AUTH
+    UI -- "Cold Start Probe" --> HEALTH
+    
+    AUTH --> DB
+    SSE --> REACT
+    REACT <--> ROUTER
+    REACT --> Tools
+    
+    VISION --> STORAGE
+    SSE -- "Save Conversation" --> DB
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 2: Sequence / ReAct Loop -->
+    <section class="section-card" id="card-sequence">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <polyline points="12 6 12 12 16 14"/>
+            </svg>
+            ReAct Autonomous Execution Sequence
+          </h2>
+          <p class="section-desc">Life-cycle of a single query turn: streaming thoughts, tool dispatch, and answer grounding</p>
+        </div>
+      </div>
+
+      <div class="diagram-viewport">
+        <div class="mermaid">
+sequenceDiagram
+    autonumber
+    actor User as User
+    participant FE as Frontend (React + SSE)
+    participant BE as FastAPI Backend
+    participant LLM as LLM (Gemini / OpenRouter)
+    participant Tool as Tool Dispatcher
+    participant DB as Neon Postgres
+
+    User->>FE: Types query & submits (with optional image)
+    FE->>FE: Mounts AbortController & opens SSE connection
+    FE->>BE: POST /api/chat (prompt, conversation_id, image_key)
+    BE->>BE: Verify session cookie & initialize ReAct state
+    
+    loop ReAct Autonomous Reasoning Cycle
+        BE->>LLM: Send system prompt, tool schemas & conversation history
+        LLM-->>BE: Stream "thinking" reasoning tokens
+        BE-->>FE: SSE event: {type: "thinking", content: "..."}
+        FE-->>User: Live updates StepTimeline (Mote is working)
+        
+        alt Agent Decides to Call a Tool
+            LLM-->>BE: Emit tool_call (e.g., web_search, fetch_url, calculator)
+            BE-->>FE: SSE event: {type: "tool_call", tool: "web_search", args: {...}}
+            BE->>Tool: Execute tool asynchronously
+            Tool-->>BE: Return observation / raw results
+            BE-->>FE: SSE event: {type: "tool_result", tool: "web_search", result: {...}}
+            BE->>BE: Append observation to ReAct prompt context
+        else Agent Has Final Answer
+            LLM-->>BE: Emit final response text
+            BE-->>FE: SSE event: {type: "final_answer", content: "..."}
+        end
+    end
+
+    BE->>DB: Persist user prompt & final answer turn
+    BE-->>FE: SSE event: [DONE]
+    FE->>FE: Update Mote to 'done', enable copy button & export options
+        </div>
+      </div>
+    </section>
+
+    <!-- Subsystem Architecture Highlights -->
+    <div class="grid">
+      <div class="info-card">
+        <div class="info-card-header">
+          <div class="info-card-icon">⚡</div>
+          <h3 class="info-card-title">Client Tier (PWA)</h3>
+        </div>
+        <div class="info-card-body">
+          Built on React 18 & Vite. Runs full-screen on mobile and desktop via service worker.
+          <ul>
+            <li><strong>sw.js:</strong> Offline shell caching and PWA installation.</li>
+            <li><strong>Mobile-first:</strong> Drawer slide-out for history, no awkward scrollbars.</li>
+            <li><strong>Mote:</strong> Reactive winged spark mascot reflecting agent state.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="info-card">
+        <div class="info-card-header">
+          <div class="info-card-icon">🧠</div>
+          <h3 class="info-card-title">ReAct Engine</h3>
+        </div>
+        <div class="info-card-body">
+          Autonomous multi-step reasoning loop (Thought → Action → Observation):
+          <div>
+            <span class="tool-tag">web_search</span>
+            <span class="tool-tag">fetch_url</span>
+            <span class="tool-tag">calculator</span>
+            <span class="tool-tag">convert</span>
+            <span class="tool-tag">vision</span>
+            <span class="tool-tag">datetime</span>
+          </div>
+          <p style="margin-top:8px;">Streams thoughts immediately via Server-Sent Events to keep users informed.</p>
+        </div>
+      </div>
+
+      <div class="info-card">
+        <div class="info-card-header">
+          <div class="info-card-icon">🛡️</div>
+          <h3 class="info-card-title">Data & Privacy</h3>
+        </div>
+        <div class="info-card-body">
+          Serverless & zero-leak data architecture:
+          <ul>
+            <li><strong>Neon Postgres:</strong> Stores user profiles and encrypted sessions.</li>
+            <li><strong>Supabase S3:</strong> Presigned upload URLs for sticky image attachments.</li>
+            <li><strong>Google OAuth:</strong> Secure HttpOnly JWT session token.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <footer style="margin-top: 40px;">
+      <p>Glasswing Architecture Blueprint · Designed for production autonomy and transparency</p>
+    </footer>
+  </div>
+
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'dark',
+      themeVariables: {
+        darkMode: true,
+        background: '#0f1015',
+        primaryColor: '#1d212b',
+        primaryBorderColor: '#f0a63d',
+        primaryTextColor: '#f1f2f6',
+        lineColor: '#f0a63d',
+        secondaryColor: '#14161c',
+        tertiaryColor: '#111318',
+        actorBorder: '#f0a63d',
+        actorBkg: '#191c24',
+        actorTextColor: '#f1f2f6',
+        signalColor: '#f0a63d',
+        signalTextColor: '#f1f2f6',
+        labelBoxBkgColor: '#191c24',
+        labelBoxBorderColor: '#2c313a',
+        labelTextColor: '#f1f2f6',
+        loopTextColor: '#8c91a1',
+        noteBorderColor: '#f0a63d',
+        noteBkgColor: '#191c24'
+      },
+      fontFamily: 'Inter, sans-serif'
+    });
+
+    function switchView(mode, btn) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      const cardArch = document.getElementById('card-architecture');
+      const cardSeq = document.getElementById('card-sequence');
+
+      if (mode === 'architecture') {
+        cardArch.style.display = 'block';
+        cardSeq.style.display = 'none';
+      } else if (mode === 'sequence') {
+        cardArch.style.display = 'none';
+        cardSeq.style.display = 'block';
+      } else {
+        cardArch.style.display = 'block';
+        cardSeq.style.display = 'block';
+      }
+    }
+  </script>
+</body>
+</html>
