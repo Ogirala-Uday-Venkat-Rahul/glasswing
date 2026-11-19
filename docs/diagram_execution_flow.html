@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Glasswing — Execution Sequence Diagram</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: #090a0d;
+      color: #f1f2f6;
+      font-family: 'Inter', sans-serif;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+    }
+    .top-bar {
+      position: absolute;
+      top: 16px;
+      left: 20px;
+      right: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 100;
+      pointer-events: none;
+    }
+    .title-pill {
+      pointer-events: auto;
+      background: rgba(20, 22, 28, 0.9);
+      border: 1px solid rgba(240, 166, 61, 0.3);
+      padding: 8px 16px;
+      border-radius: 9999px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #f6bc63;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.4);
+    }
+    .controls {
+      pointer-events: auto;
+      display: flex;
+      gap: 8px;
+    }
+    .btn {
+      background: rgba(20, 22, 28, 0.9);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #f1f2f6;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+      transition: all 0.15s ease;
+    }
+    .btn:hover {
+      border-color: #f0a63d;
+      color: #f6bc63;
+    }
+    .viewport {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      cursor: grab;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .viewport:active {
+      cursor: grabbing;
+    }
+    .canvas {
+      transform-origin: 0 0;
+      transition: transform 0.05s ease-out;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 60px;
+    }
+    .mermaid {
+      min-width: 1050px;
+    }
+    .hint {
+      position: absolute;
+      bottom: 16px;
+      right: 20px;
+      background: rgba(14, 16, 22, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      color: #8c91a1;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <div class="title-pill">Glasswing · ReAct Autonomous Execution Sequence</div>
+    <div class="controls">
+      <button class="btn" onclick="zoom(1.25)">+ Zoom In</button>
+      <button class="btn" onclick="zoom(0.8)">- Zoom Out</button>
+      <button class="btn" onclick="reset()">↺ Reset</button>
+      <button class="btn" onclick="window.location.href='architecture.html'">Back to Hub</button>
+    </div>
+  </div>
+
+  <div class="viewport" id="viewport">
+    <div class="canvas" id="canvas">
+      <div class="mermaid">
+sequenceDiagram
+    autonumber
+    actor User as User
+    participant FE as Frontend (React + SSE)
+    participant BE as FastAPI Backend
+    participant LLM as LLM (Gemini / OpenRouter)
+    participant Tool as Tool Dispatcher
+    participant DB as Neon Postgres
+
+    User->>FE: Types query & submits (with optional image)
+    FE->>FE: Mounts AbortController & opens SSE connection
+    FE->>BE: POST /api/chat (prompt, conversation_id, image_key)
+    BE->>BE: Verify session cookie & initialize ReAct state
+    
+    loop ReAct Autonomous Reasoning Cycle
+        BE->>LLM: Send system prompt, tool schemas & conversation history
+        LLM-->>BE: Stream "thinking" reasoning tokens
+        BE-->>FE: SSE event: {type: "thinking", content: "..."}
+        FE-->>User: Live updates StepTimeline (Mote is working)
+        
+        alt Agent Decides to Call a Tool
+            LLM-->>BE: Emit tool_call (e.g., web_search, fetch_url, calculator)
+            BE-->>FE: SSE event: {type: "tool_call", tool: "web_search", args: {...}}
+            BE->>Tool: Execute tool asynchronously
+            Tool-->>BE: Return observation / raw results
+            BE-->>FE: SSE event: {type: "tool_result", tool: "web_search", result: {...}}
+            BE->>BE: Append observation to ReAct prompt context
+        else Agent Has Final Answer
+            LLM-->>BE: Emit final response text
+            BE-->>FE: SSE event: {type: "final_answer", content: "..."}
+        end
+    end
+
+    BE->>DB: Persist user prompt & final answer turn
+    BE-->>FE: SSE event: [DONE]
+    FE->>FE: Update Mote to 'done', enable copy button & export options
+      </div>
+    </div>
+  </div>
+
+  <div class="hint">🖱️ Drag anywhere to pan · Scroll mouse wheel to zoom in/out</div>
+
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'dark',
+      themeVariables: {
+        darkMode: true,
+        background: '#090a0d',
+        primaryColor: '#1a1d26',
+        primaryBorderColor: '#f0a63d',
+        primaryTextColor: '#f1f2f6',
+        lineColor: '#f0a63d',
+        secondaryColor: '#14161c',
+        tertiaryColor: '#101116',
+        actorBorder: '#f0a63d',
+        actorBkg: '#191c24',
+        actorTextColor: '#f1f2f6',
+        signalColor: '#f0a63d',
+        signalTextColor: '#f1f2f6'
+      },
+      fontFamily: 'Inter, sans-serif'
+    });
+
+    let scale = 1.05;
+    let x = 0, y = 0;
+    let isDragging = false, startX = 0, startY = 0;
+    const canvas = document.getElementById('canvas');
+    const viewport = document.getElementById('viewport');
+
+    function update() {
+      canvas.style.transform = `translate(${x}px, ${y}px) scale(${scale})`;
+    }
+
+    function zoom(factor) {
+      scale = Math.min(Math.max(0.3, scale * factor), 4.5);
+      update();
+    }
+
+    function reset() {
+      scale = 1.05; x = 0; y = 0;
+      update();
+    }
+
+    viewport.addEventListener('mousedown', (e) => {
+      isDragging = true;
+      startX = e.clientX - x;
+      startY = e.clientY - y;
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+      x = e.clientX - startX;
+      y = e.clientY - startY;
+      update();
+    });
+
+    window.addEventListener('mouseup', () => { isDragging = false; });
+
+    viewport.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      zoom(e.deltaY < 0 ? 1.14 : 0.88);
+    }, { passive: false });
+
+    update();
+  </script>
+</body>
+</html>

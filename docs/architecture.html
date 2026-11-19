@@ -13,13 +13,12 @@
       --bg: #0b0c10;
       --panel: #14161c;
       --panel-top: #191c24;
-      --border: rgba(255, 255, 255, 0.08);
-      --border-accent: rgba(240, 166, 61, 0.3);
+      --border: rgba(255, 255, 255, 0.1);
+      --border-accent: rgba(240, 166, 61, 0.35);
       --text: #f1f2f6;
-      --muted: #8c91a1;
+      --muted: #9aa0b2;
       --accent: #f0a63d;
       --accent-ink: #f6bc63;
-      --card-bg: rgba(20, 22, 28, 0.7);
     }
 
     * {
@@ -32,13 +31,12 @@
       background-color: var(--bg);
       color: var(--text);
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      line-height: 1.6;
       min-height: 100vh;
-      padding: 32px 20px 80px;
+      padding: 24px 20px 80px;
     }
 
     .container {
-      max-width: 1240px;
+      max-width: 1400px;
       margin: 0 auto;
     }
 
@@ -48,8 +46,8 @@
       align-items: center;
       justify-content: space-between;
       border-bottom: 1px solid var(--border);
-      padding-bottom: 24px;
-      margin-bottom: 32px;
+      padding-bottom: 20px;
+      margin-bottom: 24px;
       flex-wrap: wrap;
       gap: 16px;
     }
@@ -63,7 +61,7 @@
     .brand-icon {
       width: 44px;
       height: 44px;
-      background: radial-gradient(circle at 50% 50%, rgba(240, 166, 61, 0.25) 0%, transparent 70%), var(--panel);
+      background: radial-gradient(circle, rgba(240, 166, 61, 0.25) 0%, transparent 70%), var(--panel);
       border: 1px solid var(--border-accent);
       border-radius: 12px;
       display: flex;
@@ -110,70 +108,29 @@
       box-shadow: 0 0 8px var(--accent);
     }
 
-    /* Nav Tabs */
-    .nav-tabs {
-      display: flex;
-      gap: 8px;
-      margin-bottom: 28px;
-      background: var(--panel);
-      padding: 5px;
-      border-radius: 12px;
-      border: 1px solid var(--border);
-      width: fit-content;
-    }
-
-    .tab-btn {
-      padding: 8px 18px;
-      border-radius: 8px;
-      border: none;
-      background: transparent;
-      color: var(--muted);
-      font-size: 13.5px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.15s ease;
-    }
-
-    .tab-btn:hover {
-      color: var(--text);
-    }
-
-    .tab-btn.active {
-      background: var(--panel-top);
-      color: var(--accent-ink);
-      border: 1px solid var(--border-accent);
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
-    }
-
-    /* Diagram Section Cards */
+    /* Section Cards */
     .section-card {
-      background: var(--card-bg);
+      background: var(--panel);
       border: 1px solid var(--border);
-      border-radius: 18px;
-      padding: 28px;
-      margin-bottom: 32px;
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.35);
-      backdrop-filter: blur(10px);
-      transition: border-color 0.2s;
-    }
-
-    .section-card:hover {
-      border-color: rgba(255, 255, 255, 0.14);
+      border-radius: 16px;
+      padding: 22px;
+      margin-bottom: 28px;
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.4);
     }
 
     .section-header {
-      margin-bottom: 20px;
-      padding-bottom: 14px;
-      border-bottom: 1px solid var(--border);
       display: flex;
       align-items: center;
       justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 14px;
+      margin-bottom: 16px;
       flex-wrap: wrap;
       gap: 12px;
     }
 
     .section-title {
-      font-size: 19px;
+      font-size: 18px;
       font-weight: 600;
       letter-spacing: -0.01em;
       display: flex;
@@ -182,22 +139,154 @@
     }
 
     .section-desc {
-      font-size: 13.5px;
+      font-size: 13px;
       color: var(--muted);
-      margin-top: 4px;
+      margin-top: 2px;
     }
 
-    .diagram-viewport {
-      background: #0f1015;
+    /* Controls Toolbar on each diagram */
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .tool-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 8px;
       border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 30px 20px;
-      overflow-x: auto;
+      background: var(--panel-top);
+      color: var(--text);
+      font-size: 12.5px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      user-select: none;
+    }
+
+    .tool-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent-ink);
+      background: rgba(240, 166, 61, 0.08);
+    }
+
+    .tool-btn.primary {
+      border-color: var(--accent);
+      background: rgba(240, 166, 61, 0.14);
+      color: var(--accent-ink);
+      font-weight: 600;
+    }
+
+    .tool-btn.primary:hover {
+      background: var(--accent);
+      color: #120e06;
+    }
+
+    /* Pan & Zoom Canvas Container */
+    .viewport {
+      position: relative;
+      width: 100%;
+      height: 580px;
+      background: #090a0d;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      cursor: grab;
+    }
+
+    .viewport:active {
+      cursor: grabbing;
+    }
+
+    .viewport-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      transform-origin: 0 0;
+      transition: transform 0.05s ease-out;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+      min-width: 100%;
+      min-height: 100%;
+    }
+
+    /* Ensure Mermaid text is never crushed */
+    .viewport-canvas .mermaid {
+      min-width: 1000px;
+      width: auto !important;
       display: flex;
       justify-content: center;
     }
 
-    /* Subsystem Spec Grid */
+    .viewport-canvas svg {
+      width: 100% !important;
+      max-width: none !important;
+      height: auto !important;
+      font-family: 'Inter', sans-serif !important;
+    }
+
+    /* Legend / Hint at bottom right */
+    .viewport-hint {
+      position: absolute;
+      bottom: 12px;
+      right: 14px;
+      background: rgba(14, 16, 22, 0.85);
+      border: 1px solid var(--border);
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      color: var(--muted);
+      pointer-events: none;
+      backdrop-filter: blur(4px);
+    }
+
+    /* Fullscreen Modal */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.92);
+      backdrop-filter: blur(8px);
+      z-index: 1000;
+      padding: 20px;
+      flex-direction: column;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 14px;
+    }
+
+    .modal-viewport {
+      flex: 1 1 auto;
+      height: calc(100vh - 120px);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: #090a0d;
+      position: relative;
+      overflow: hidden;
+      cursor: grab;
+    }
+
+    .modal-viewport:active {
+      cursor: grabbing;
+    }
+
+    /* Subsystem Cards Grid */
     .grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -210,12 +299,6 @@
       border: 1px solid var(--border);
       border-radius: 14px;
       padding: 20px;
-      transition: all 0.2s ease;
-    }
-
-    .info-card:hover {
-      border-color: var(--border-accent);
-      transform: translateY(-2px);
     }
 
     .info-card-header {
@@ -240,7 +323,6 @@
     .info-card-title {
       font-size: 15px;
       font-weight: 600;
-      color: var(--text);
     }
 
     .info-card-body {
@@ -258,7 +340,6 @@
       margin-bottom: 4px;
     }
 
-    /* Tool tags */
     .tool-tag {
       display: inline-block;
       padding: 2px 7px;
@@ -270,14 +351,6 @@
       color: var(--accent-ink);
       margin-right: 4px;
       margin-top: 4px;
-    }
-
-    footer {
-      text-align: center;
-      padding-top: 24px;
-      border-top: 1px solid var(--border);
-      color: var(--muted);
-      font-size: 12.5px;
     }
   </style>
 </head>
@@ -294,7 +367,7 @@
         </div>
         <div>
           <h1>Glass<span>wing</span> Architecture</h1>
-          <p>High Level Design, Component Interactions & ReAct Agent Flow</p>
+          <p>Interactive Pan, Zoom, and High-Resolution Diagrams</p>
         </div>
       </div>
       <div class="badge">
@@ -303,14 +376,8 @@
       </div>
     </header>
 
-    <div class="nav-tabs">
-      <button class="tab-btn active" onclick="switchView('all', this)">Overview</button>
-      <button class="tab-btn" onclick="switchView('architecture', this)">System Architecture</button>
-      <button class="tab-btn" onclick="switchView('sequence', this)">Execution Flow</button>
-    </div>
-
     <!-- Section 1: System Architecture -->
-    <section class="section-card" id="card-architecture">
+    <section class="section-card">
       <div class="section-header">
         <div>
           <h2 class="section-title">
@@ -319,14 +386,29 @@
               <line x1="8" y1="21" x2="16" y2="21"/>
               <line x1="12" y1="17" x2="12" y2="21"/>
             </svg>
-            System Architecture
+            1. System Architecture
           </h2>
-          <p class="section-desc">Tiered topological view of the Client, Gateway, Agent Engine, and Cloud Storage</p>
+          <p class="section-desc">Tiered topological map: Client (PWA) → API Gateway → ReAct Engine → Cloud DB</p>
+        </div>
+        <div class="toolbar">
+          <button class="tool-btn" onclick="zoom('arch', 1.25)" title="Zoom in">+</button>
+          <button class="tool-btn" onclick="zoom('arch', 0.8)" title="Zoom out">-</button>
+          <button class="tool-btn" onclick="resetZoom('arch')" title="Reset scale">↺ Reset</button>
+          <button class="tool-btn" onclick="openFullscreen('arch', 'System Architecture')" title="Fullscreen">⛶ Expand</button>
+          <button class="tool-btn primary" onclick="openInNewTab('arch')" title="Open diagram directly in full tab">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+              <polyline points="15 3 21 3 21 9"/>
+              <line x1="10" y1="14" x2="21" y2="3"/>
+            </svg>
+            Open in New Tab
+          </button>
         </div>
       </div>
 
-      <div class="diagram-viewport">
-        <div class="mermaid">
+      <div class="viewport" id="viewport-arch">
+        <div class="viewport-canvas" id="canvas-arch">
+          <div class="mermaid" id="mermaid-arch">
 flowchart TD
     subgraph Client["Client Tier (Vercel)"]
         UI["React 18 + Vite SPA"]
@@ -377,12 +459,14 @@ flowchart TD
     
     VISION --> STORAGE
     SSE -- "Save Conversation" --> DB
+          </div>
         </div>
+        <div class="viewport-hint">🖱️ Drag to pan · Scroll wheel to zoom</div>
       </div>
     </section>
 
-    <!-- Section 2: Sequence / ReAct Loop -->
-    <section class="section-card" id="card-sequence">
+    <!-- Section 2: ReAct Sequence -->
+    <section class="section-card">
       <div class="section-header">
         <div>
           <h2 class="section-title">
@@ -390,14 +474,29 @@ flowchart TD
               <circle cx="12" cy="12" r="10"/>
               <polyline points="12 6 12 12 16 14"/>
             </svg>
-            ReAct Autonomous Execution Sequence
+            2. ReAct Autonomous Execution Sequence
           </h2>
-          <p class="section-desc">Life-cycle of a single query turn: streaming thoughts, tool dispatch, and answer grounding</p>
+          <p class="section-desc">Query turn lifecycle: live thought streaming, tool execution, and database persistence</p>
+        </div>
+        <div class="toolbar">
+          <button class="tool-btn" onclick="zoom('seq', 1.25)" title="Zoom in">+</button>
+          <button class="tool-btn" onclick="zoom('seq', 0.8)" title="Zoom out">-</button>
+          <button class="tool-btn" onclick="resetZoom('seq')" title="Reset scale">↺ Reset</button>
+          <button class="tool-btn" onclick="openFullscreen('seq', 'Execution Sequence')" title="Fullscreen">⛶ Expand</button>
+          <button class="tool-btn primary" onclick="openInNewTab('seq')" title="Open diagram directly in full tab">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+              <polyline points="15 3 21 3 21 9"/>
+              <line x1="10" y1="14" x2="21" y2="3"/>
+            </svg>
+            Open in New Tab
+          </button>
         </div>
       </div>
 
-      <div class="diagram-viewport">
-        <div class="mermaid">
+      <div class="viewport" id="viewport-seq">
+        <div class="viewport-canvas" id="canvas-seq">
+          <div class="mermaid" id="mermaid-seq">
 sequenceDiagram
     autonumber
     actor User as User
@@ -434,11 +533,13 @@ sequenceDiagram
     BE->>DB: Persist user prompt & final answer turn
     BE-->>FE: SSE event: [DONE]
     FE->>FE: Update Mote to 'done', enable copy button & export options
+          </div>
         </div>
+        <div class="viewport-hint">🖱️ Drag to pan · Scroll wheel to zoom</div>
       </div>
     </section>
 
-    <!-- Subsystem Architecture Highlights -->
+    <!-- Subsystems Grid -->
     <div class="grid">
       <div class="info-card">
         <div class="info-card-header">
@@ -448,8 +549,8 @@ sequenceDiagram
         <div class="info-card-body">
           Built on React 18 & Vite. Runs full-screen on mobile and desktop via service worker.
           <ul>
-            <li><strong>sw.js:</strong> Offline shell caching and PWA installation.</li>
-            <li><strong>Mobile-first:</strong> Drawer slide-out for history, no awkward scrollbars.</li>
+            <li><strong>sw.js:</strong> Offline shell caching and 1-tap installation.</li>
+            <li><strong>Mobile drawer:</strong> Slide-out history panel with no horizontal scrollbars.</li>
             <li><strong>Mote:</strong> Reactive winged spark mascot reflecting agent state.</li>
           </ul>
         </div>
@@ -489,10 +590,23 @@ sequenceDiagram
         </div>
       </div>
     </div>
+  </div>
 
-    <footer style="margin-top: 40px;">
-      <p>Glasswing Architecture Blueprint · Designed for production autonomy and transparency</p>
-    </footer>
+  <!-- Fullscreen Modal View -->
+  <div class="modal-overlay" id="fullscreen-modal">
+    <div class="modal-header">
+      <h3 id="modal-title" style="font-size: 18px; font-weight: 600;">Diagram Viewer</h3>
+      <div class="toolbar">
+        <button class="tool-btn" onclick="zoom('modal', 1.25)">+ Zoom In</button>
+        <button class="tool-btn" onclick="zoom('modal', 0.8)">- Zoom Out</button>
+        <button class="tool-btn" onclick="resetZoom('modal')">↺ Reset</button>
+        <button class="tool-btn" onclick="closeFullscreen()">✕ Close</button>
+      </div>
+    </div>
+    <div class="modal-viewport" id="viewport-modal">
+      <div class="viewport-canvas" id="canvas-modal"></div>
+      <div class="viewport-hint">🖱️ Drag to pan · Scroll wheel to zoom</div>
+    </div>
   </div>
 
   <script>
@@ -501,13 +615,13 @@ sequenceDiagram
       theme: 'dark',
       themeVariables: {
         darkMode: true,
-        background: '#0f1015',
-        primaryColor: '#1d212b',
+        background: '#090a0d',
+        primaryColor: '#1a1d26',
         primaryBorderColor: '#f0a63d',
         primaryTextColor: '#f1f2f6',
         lineColor: '#f0a63d',
         secondaryColor: '#14161c',
-        tertiaryColor: '#111318',
+        tertiaryColor: '#101116',
         actorBorder: '#f0a63d',
         actorBkg: '#191c24',
         actorTextColor: '#f1f2f6',
@@ -523,24 +637,117 @@ sequenceDiagram
       fontFamily: 'Inter, sans-serif'
     });
 
-    function switchView(mode, btn) {
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
+    // Pan & Zoom Engine for each viewport
+    const viewStates = {
+      arch: { scale: 1, x: 0, y: 0, isDragging: false, startX: 0, startY: 0 },
+      seq: { scale: 1, x: 0, y: 0, isDragging: false, startX: 0, startY: 0 },
+      modal: { scale: 1, x: 0, y: 0, isDragging: false, startX: 0, startY: 0 }
+    };
 
-      const cardArch = document.getElementById('card-architecture');
-      const cardSeq = document.getElementById('card-sequence');
-
-      if (mode === 'architecture') {
-        cardArch.style.display = 'block';
-        cardSeq.style.display = 'none';
-      } else if (mode === 'sequence') {
-        cardArch.style.display = 'none';
-        cardSeq.style.display = 'block';
-      } else {
-        cardArch.style.display = 'block';
-        cardSeq.style.display = 'block';
+    function updateTransform(id) {
+      const state = viewStates[id];
+      const canvas = document.getElementById(`canvas-${id}`);
+      if (canvas) {
+        canvas.style.transform = `translate(${state.x}px, ${state.y}px) scale(${state.scale})`;
       }
     }
+
+    function zoom(id, factor) {
+      const state = viewStates[id];
+      state.scale = Math.min(Math.max(0.3, state.scale * factor), 4);
+      updateTransform(id);
+    }
+
+    function resetZoom(id) {
+      const state = viewStates[id];
+      state.scale = 1;
+      state.x = 0;
+      state.y = 0;
+      updateTransform(id);
+    }
+
+    function setupPanZoom(id) {
+      const viewport = document.getElementById(`viewport-${id}`);
+      const state = viewStates[id];
+
+      viewport.addEventListener('mousedown', (e) => {
+        state.isDragging = true;
+        state.startX = e.clientX - state.x;
+        state.startY = e.clientY - state.y;
+      });
+
+      window.addEventListener('mousemove', (e) => {
+        if (!state.isDragging) return;
+        state.x = e.clientX - state.startX;
+        state.y = e.clientY - state.startY;
+        updateTransform(id);
+      });
+
+      window.addEventListener('mouseup', () => {
+        state.isDragging = false;
+      });
+
+      viewport.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const factor = e.deltaY < 0 ? 1.12 : 0.88;
+        zoom(id, factor);
+      }, { passive: false });
+    }
+
+    setupPanZoom('arch');
+    setupPanZoom('seq');
+    setupPanZoom('modal');
+
+    // Open diagram as pure standalone SVG in a new tab
+    function openInNewTab(id) {
+      const container = document.getElementById(`mermaid-${id}`);
+      const svg = container ? container.querySelector('svg') : null;
+      if (!svg) {
+        alert("Diagram is still rendering, please wait a moment.");
+        return;
+      }
+
+      // Clone SVG and set clean attributes for standalone viewing
+      const clonedSvg = svg.cloneNode(true);
+      clonedSvg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+      clonedSvg.style.background = '#090a0d';
+      clonedSvg.style.width = '100vw';
+      clonedSvg.style.height = '100vh';
+      clonedSvg.style.padding = '40px';
+
+      const svgData = new XMLSerializer().serializeToString(clonedSvg);
+      const blob = new Blob([
+        `<!DOCTYPE html><html><head><title>Glasswing Diagram</title><style>body{margin:0;background:#090a0d;display:flex;justify-content:center;align-items:center;min-height:100vh;overflow:auto;}</style></head><body>${svgData}</body></html>`
+      ], { type: 'text/html' });
+
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank');
+    }
+
+    // Fullscreen Modal View
+    function openFullscreen(id, title) {
+      const modal = document.getElementById('fullscreen-modal');
+      const modalTitle = document.getElementById('modal-title');
+      const modalCanvas = document.getElementById('canvas-modal');
+      const source = document.getElementById(`mermaid-${id}`);
+
+      if (!source) return;
+      modalTitle.innerText = title;
+      modalCanvas.innerHTML = source.innerHTML;
+
+      resetZoom('modal');
+      modal.classList.add('active');
+    }
+
+    function closeFullscreen() {
+      const modal = document.getElementById('fullscreen-modal');
+      modal.classList.remove('active');
+      document.getElementById('canvas-modal').innerHTML = '';
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeFullscreen();
+    });
   </script>
 </body>
 </html>
